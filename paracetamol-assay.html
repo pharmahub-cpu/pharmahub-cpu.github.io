@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assay of Paracetamol</title>
+<link rel="stylesheet" href="./sim.css">
+<style>
+  .stage { display: none; }
+  .stage.is-on { display: block; }
+  .kv { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
+  .kv:last-child { border-bottom: 0; }
+  .kv span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .flask-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .flask {
+    flex: 1 1 90px; border: 1px solid var(--border); border-radius: 9px;
+    padding: 10px 8px; text-align: center; font-size: 0.8rem; background: var(--surface-2);
+  }
+  .flask.done { border-color: var(--ok); }
+  .flask b { display: block; font-size: 1rem; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .nav-row { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+  .calc { background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 13px 15px; font-size: 0.88rem; }
+  .calc code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .result-big { font-size: 2.4rem; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<header class="sim-header" id="sim-header"></header>
+
+<main class="sim-main">
+  <div class="sim-wrap">
+
+    <div class="sim-intro">
+      <h2>Assay of paracetamol tablets by UV-Visible spectrophotometry</h2>
+      <p>
+        Prepare a standard, build a calibration curve, measure the sample and
+        calculate the percentage of the label claim. Each run uses a different
+        batch, so your answer will not be the same as anyone else's.
+      </p>
+    </div>
+
+    <div class="steps" id="steps"></div>
+
+    <!-- ===================== STAGE 1 — STANDARD ===================== -->
+    <section class="stage is-on" data-stage="0">
+      <div class="bench">
+        <section class="panel">
+          <h2>Step 1 — Standard preparation</h2>
+          <div class="field">
+            <label for="solvent">Solvent</label>
+            <select id="solvent">
+              <option value="naoh">0.1 M sodium hydroxide</option>
+              <option value="water">Distilled water</option>
+              <option value="hcl">0.1 M hydrochloric acid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="std-wt">Working standard weighed <span class="val"><span id="std-wt-val">100</span> mg</span></label>
+            <input id="std-wt" type="range" min="50" max="150" step="5" value="100">
+          </div>
+          <p class="muted small">
+            Dissolved and made up to 100 mL, then 10 mL diluted to 100 mL to give the
+            working standard solution.
+          </p>
+          <div class="note" id="solvent-note"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Solutions obtained</h2>
+          <div class="kv"><span>Stock solution</span><span id="kv-stock">—</span></div>
+          <div class="kv"><span>Working standard</span><span id="kv-work">—</span></div>
+          <div class="kv"><span>&lambda;<sub>max</sub> in this solvent</span><span id="kv-lmax">—</span></div>
+          <div class="calc" style="margin-top:14px">
+            <strong>Why 0.1 M NaOH?</strong><br>
+            In alkali paracetamol exists as the phenolate ion, which absorbs strongly
+            at 257 nm with A(1%, 1 cm) ≈ 715. The band is sharper and more intense
+            than in water or acid, so the assay is more sensitive and more reproducible.
+          </div>
+        </section>
+      </div>
+      <div class="nav-row">
+        <span></span>
+        <button class="btn btn-primary" data-go="1" type="button">Continue to calibration →</button>
+      </div>
+    </section>
+
+    <!-- ===================== STAGE 2 — CALIBRATION ================== -->
+    <section class="stage" data-stage="1">
+      <div class="bench">
+        <section class="panel">
+          <h2>Step 2 — Calibration standards</h2>
+          <p class="muted small" style="margin-top:0">
+            Aliquots of the working standard are pipetted into 100 mL flasks and made
+            up with solvent.
+          </p>
+          <div class="flask-row" id="flasks"></div>
+
+          <div class="field" style="margin-top:18px">
+            <label for="wl2">Measurement wavelength <span class="val"><span id="wl2-val">257</span> nm</span></label>
+            <input id="wl2" type="range" min="220" max="300" step="1" value="257">
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="use-lmax" type="button">Set to &lambda;max</button>
+            <button class="btn btn-primary" id="measure-std" type="button">Measure all standards</button>
+          </div>
+          <div class="note" id="cal-note">Set the wavelength, then measure.</div>
+        </section>
+
+        <section class="panel">
+          <h2>Calibration curve</h2>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px">
+            <svg id="cal-chart" viewBox="0 0 480 260" role="img" aria-label="Calibration curve of absorbance against concentration"></svg>
+          </div>
+          <div class="kv" style="margin-top:12px"><span>Slope (per µg/mL)</span><span id="kv-slope">—</span></div>
+          <div class="kv"><span>Intercept</span><span id="kv-int">—</span></div>
+          <div class="kv"><span>Correlation r²</span><span id="kv-r2">—</span></div>
+        </section>
+      </div>
+      <div class="nav-row">
+        <button class="btn btn-ghost" data-go="0" type="button">← Back</button>
+        <button class="btn btn-primary" data-go="2" id="to-sample" type="button" disabled>Continue to sample →</button>
+      </div>
+    </section>
+
+    <!-- ===================== STAGE 3 — SAMPLE ======================= -->
+    <section class="stage" data-stage="2">
+      <div class="bench">
+        <section class="panel">
+          <h2>Step 3 — Sample preparation</h2>
+          <div class="kv"><span>Tablets weighed</span><span>20</span></div>
+          <div class="kv"><span>Label claim per tablet</span><span id="kv-claim">500 mg</span></div>
+          <div class="kv"><span>Average tablet weight</span><span id="kv-avgwt">—</span></div>
+          <div class="field" style="margin-top:16px">
+            <label for="powder">Powder weighed <span class="val"><span id="powder-val">—</span> g</span></label>
+            <input id="powder" type="range" min="80" max="140" step="1" value="100">
+            <p class="muted small" style="margin:8px 0 0" id="powder-hint"></p>
+          </div>
+          <p class="muted small">
+            Shaken with solvent, made up to 100 mL, filtered; 10 mL diluted to 100 mL,
+            then 10 mL of that diluted to 100 mL.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="measure-sample" type="button">Measure sample absorbance</button>
+          </div>
+          <div class="note" id="sample-note">Adjust the powder weight, then measure.</div>
+        </section>
+
+        <section class="panel">
+          <h2>Sample readings</h2>
+          <div class="tbl-scroll">
+            <table class="data">
+              <thead><tr><th>Replicate</th><th>Absorbance</th><th>Conc. (µg/mL)</th></tr></thead>
+              <tbody id="sample-rows"><tr><td colspan="3" class="muted">Not measured yet.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="kv" style="margin-top:12px"><span>Mean absorbance</span><span id="kv-meanA">—</span></div>
+          <div class="kv"><span>Mean concentration</span><span id="kv-meanC">—</span></div>
+        </section>
+      </div>
+      <div class="nav-row">
+        <button class="btn btn-ghost" data-go="1" type="button">← Back</button>
+        <button class="btn btn-primary" data-go="3" id="to-result" type="button" disabled>Calculate result →</button>
+      </div>
+    </section>
+
+    <!-- ===================== STAGE 4 — RESULT ======================= -->
+    <section class="stage" data-stage="3">
+      <div class="bench">
+        <section class="panel">
+          <h2>Step 4 — Calculation</h2>
+          <div class="calc" id="working"></div>
+        </section>
+        <section class="panel">
+          <h2>Result</h2>
+          <p class="muted small" style="margin-top:0">Content per tablet</p>
+          <div class="result-big" id="res-mg">—</div>
+          <p class="muted small" style="margin:14px 0 0">Percentage of label claim</p>
+          <div class="result-big" id="res-pct">—</div>
+          <div class="note" id="verdict" style="margin-top:16px"></div>
+          <div class="calc" style="margin-top:14px">
+            <strong>Acceptance criterion.</strong> Paracetamol tablets should contain
+            not less than 95.0 % and not more than 105.0 % of the stated amount of
+            paracetamol (C<sub>8</sub>H<sub>9</sub>NO<sub>2</sub>).
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="new-batch" type="button">Run again with a new batch</button>
+          </div>
+        </section>
+      </div>
+      <div class="nav-row">
+        <button class="btn btn-ghost" data-go="2" type="button">← Back</button>
+        <span></span>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="./resources.js"></script>
+<script src="./progress.js"></script>
+<script src="./simulation-kit.js"></script>
+<script>
+SimKit.init({
+  id: "paracetamol-assay",
+  title: "Assay of Paracetamol",
+  subject: "Pharmaceutical Analysis",
+  depth: 0
+});
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------------------------------------------------------------- model */
+const SOLVENTS = {
+  naoh:  { name: "0.1 M NaOH",  lmax: 257, a1: 0.0715, width: 15,
+           note: "Correct choice. Paracetamol is assayed as the phenolate ion at 257 nm." },
+  water: { name: "water",       lmax: 243, a1: 0.0625, width: 13,
+           note: "Usable, but the molar absorptivity is lower than in alkali and the result is less precise." },
+  hcl:   { name: "0.1 M HCl",   lmax: 245, a1: 0.0630, width: 13,
+           note: "Acid conditions shift λmax to about 245 nm. Not the official condition for this assay." },
+};
+
+/* A fresh batch each run: true content between 94 % and 106 % of claim. */
+function newBatch() {
+  return {
+    claim: 500,                                     // mg per tablet
+    avgWt: 0.545 + Math.random() * 0.04,            // g
+    truePct: 94 + Math.random() * 12,               // % of label claim
+  };
+}
+
+const S = {
+  stage: 0,
+  solvent: "naoh",
+  stdWt: 100,
+  wl: 257,
+  standards: [2, 4, 6, 8, 10],
+  stdA: null,
+  fit: null,
+  batch: newBatch(),
+  powderMg: 100,          // slider value, scaled below
+  sampleA: null,
+};
+
+function solv() { return SOLVENTS[S.solvent]; }
+
+/* Absorptivity at the chosen wavelength — a Gaussian band around λmax. */
+function absorptivity(wl) {
+  const s = solv();
+  return s.a1 * Math.exp(-((wl - s.lmax) ** 2) / (2 * s.width * s.width));
+}
+
+/* Reading noise grows in relative terms as absorbance falls. */
+function readA(conc) {
+  const a = absorptivity(S.wl) * conc;
+  return Math.max(0, a + SimKit.noise(0.0025 + 0.004 * Math.exp(-a * 3)));
+}
+
+/* Powder weight that is equivalent to 100 mg of paracetamol. */
+function idealPowderG() {
+  return (S.batch.avgWt * 100) / S.batch.claim;
+}
+function powderG() {
+  return (S.powderMg / 100) * idealPowderG();
+}
+
+/* ---------------------------------------------------------------- steps */
+const STEP_LABELS = ["Standard", "Calibration", "Sample", "Result"];
+function renderSteps() {
+  $("steps").innerHTML = STEP_LABELS.map((l, i) => {
+    const cls = i === S.stage ? "is-on" : (i < S.stage ? "is-done" : "");
+    return '<span class="step ' + cls + '">' + (i < S.stage ? "✓ " : (i + 1) + ". ") + l + "</span>";
+  }).join("");
+}
+
+function go(n) {
+  S.stage = n;
+  document.querySelectorAll(".stage").forEach((el) => {
+    el.classList.toggle("is-on", +el.dataset.stage === n);
+  });
+  renderSteps();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (n === 3) computeResult();
+}
+document.querySelectorAll("[data-go]").forEach((b) =>
+  b.addEventListener("click", () => go(+b.dataset.go))
+);
+
+/* -------------------------------------------------------- stage 1 : std */
+function renderStandardStage() {
+  const stock = (S.stdWt / 100) * 1000;        // µg/mL in the 100 mL flask
+  const work = stock / 10;                     // after 10 -> 100 mL dilution
+  $("std-wt-val").textContent = S.stdWt;
+  $("kv-stock").textContent = stock.toFixed(0) + " µg/mL";
+  $("kv-work").textContent = work.toFixed(0) + " µg/mL";
+  $("kv-lmax").textContent = solv().lmax + " nm";
+  const n = $("solvent-note");
+  n.className = "note " + (S.solvent === "naoh" ? "ok" : "warn");
+  n.textContent = solv().note;
+  /* standards are aliquots of the working standard into 100 mL flasks */
+  S.standards = [2, 4, 6, 8, 10].map((v) => (v * work) / 100);
+}
+
+$("solvent").addEventListener("change", (e) => {
+  S.solvent = e.target.value;
+  S.stdA = null; S.fit = null; S.sampleA = null;
+  $("to-sample").disabled = true;
+  $("to-result").disabled = true;
+  renderStandardStage(); renderCalStage();
+});
+$("std-wt").addEventListener("input", (e) => {
+  S.stdWt = +e.target.value;
+  S.stdA = null; S.fit = null;
+  $("to-sample").disabled = true;
+  renderStandardStage(); renderCalStage();
+});
+
+/* -------------------------------------------------------- stage 2 : cal */
+function renderCalStage() {
+  $("wl2-val").textContent = S.wl;
+  const host = $("flasks");
+  host.innerHTML = "";
+  S.standards.forEach((c, i) => {
+    const d = document.createElement("div");
+    d.className = "flask" + (S.stdA ? " done" : "");
+    d.innerHTML =
+      "Flask " + (i + 1) +
+      "<b>" + c.toFixed(1) + "</b><span class='muted' style='font-size:.72rem'>µg/mL</span>" +
+      (S.stdA ? "<b style='color:var(--ok)'>" + S.stdA[i].toFixed(3) + "</b>" +
+                "<span class='muted' style='font-size:.72rem'>A</span>" : "");
+    host.appendChild(d);
+  });
+
+  if (S.fit) {
+    $("kv-slope").textContent = S.fit.m.toFixed(5);
+    $("kv-int").textContent = S.fit.c.toFixed(4);
+    $("kv-r2").textContent = S.fit.r2.toFixed(4);
+  } else {
+    $("kv-slope").textContent = $("kv-int").textContent = $("kv-r2").textContent = "—";
+  }
+  drawCal();
+}
+
+$("wl2").addEventListener("input", (e) => {
+  S.wl = +e.target.value;
+  S.stdA = null; S.fit = null; S.sampleA = null;
+  $("to-sample").disabled = true; $("to-result").disabled = true;
+  renderCalStage();
+});
+
+$("use-lmax").addEventListener("click", () => {
+  S.wl = solv().lmax;
+  $("wl2").value = S.wl;
+  S.stdA = null; S.fit = null;
+  $("to-sample").disabled = true;
+  renderCalStage();
+});
+
+$("measure-std").addEventListener("click", () => {
+  S.stdA = S.standards.map((c) => readA(c));
+  S.fit = SimKit.linearFit(S.standards.map((c, i) => ({ x: c, y: S.stdA[i] })));
+  const n = $("cal-note");
+  const top = Math.max(...S.stdA);
+  if (S.fit.r2 < 0.99) {
+    n.className = "note warn";
+    n.textContent = "r² = " + S.fit.r2.toFixed(4) + " — the fit is poor because absorbances here are too low. Move closer to λmax.";
+  } else if (top > 1.0) {
+    n.className = "note warn";
+    n.textContent = "The most concentrated standard reads above 1.0 A. Acceptable, but the top of the range is drifting from linearity.";
+  } else {
+    n.className = "note ok";
+    n.textContent = "Good calibration: r² = " + S.fit.r2.toFixed(4) + ", absorbances span " +
+                    Math.min(...S.stdA).toFixed(3) + " to " + top.toFixed(3) + ".";
+  }
+  $("to-sample").disabled = false;
+  renderCalStage();
+});
+
+function drawCal() {
+  const svg = $("cal-chart");
+  const W = 480, H = 260, L = 52, R = 14, T = 14, B = 40;
+  const pw = W - L - R, ph = H - T - B;
+  const maxC = Math.max(...S.standards) * 1.15;
+  const maxA = Math.max(0.2, (S.stdA ? Math.max(...S.stdA) : 1) * 1.15);
+  const x = (c) => L + (c / maxC) * pw;
+  const y = (a) => T + ph - (a / maxA) * ph;
+  let s = "";
+
+  for (let i = 0; i <= 4; i++) {
+    const a = (maxA / 4) * i;
+    s += `<line x1="${L}" y1="${y(a)}" x2="${W - R}" y2="${y(a)}" stroke="currentColor" stroke-opacity=".12"/>`;
+    s += `<text x="${L - 8}" y="${y(a) + 4}" text-anchor="end" font-size="10" fill="currentColor" fill-opacity=".55">${a.toFixed(2)}</text>`;
+  }
+  for (let i = 0; i <= 5; i++) {
+    const c = (maxC / 5) * i;
+    s += `<text x="${x(c)}" y="${H - 16}" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".55">${c.toFixed(0)}</text>`;
+  }
+  s += `<text x="${L + pw / 2}" y="${H - 3}" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".55">Concentration (µg/mL)</text>`;
+  s += `<text x="13" y="${T + ph / 2}" font-size="10" fill="currentColor" fill-opacity=".55" transform="rotate(-90 13 ${T + ph / 2})" text-anchor="middle">Absorbance</text>`;
+
+  if (S.fit) {
+    const x1 = 0, x2 = maxC;
+    s += `<line x1="${x(x1)}" y1="${y(S.fit.c)}" x2="${x(x2)}" y2="${y(S.fit.m * x2 + S.fit.c)}" stroke="var(--brand)" stroke-width="2"/>`;
+  }
+  if (S.stdA) {
+    S.standards.forEach((c, i) => {
+      s += `<circle cx="${x(c)}" cy="${y(S.stdA[i])}" r="4.5" fill="var(--brand)" stroke="var(--surface)" stroke-width="1.5"/>`;
+    });
+  }
+  if (S.sampleA !== null && S.fit) {
+    const meanA = S.sampleA.reduce((a, b) => a + b, 0) / S.sampleA.length;
+    const cSample = (meanA - S.fit.c) / S.fit.m;
+    s += `<line x1="${L}" y1="${y(meanA)}" x2="${x(cSample)}" y2="${y(meanA)}" stroke="var(--warn,#b45309)" stroke-dasharray="4 3"/>`;
+    s += `<line x1="${x(cSample)}" y1="${y(meanA)}" x2="${x(cSample)}" y2="${T + ph}" stroke="var(--warn,#b45309)" stroke-dasharray="4 3"/>`;
+    s += `<circle cx="${x(cSample)}" cy="${y(meanA)}" r="5" fill="var(--warn,#b45309)"/>`;
+    s += `<text x="${x(cSample) + 8}" y="${y(meanA) - 8}" font-size="11" fill="currentColor">sample</text>`;
+  }
+  if (!S.stdA) {
+    s += `<text x="${L + pw / 2}" y="${T + ph / 2}" text-anchor="middle" font-size="12" fill="currentColor" fill-opacity=".45">Measure the standards to plot the curve</text>`;
+  }
+  s += `<line x1="${L}" y1="${T}" x2="${L}" y2="${T + ph}" stroke="currentColor" stroke-opacity=".35"/>`;
+  s += `<line x1="${L}" y1="${T + ph}" x2="${W - R}" y2="${T + ph}" stroke="currentColor" stroke-opacity=".35"/>`;
+  svg.innerHTML = s;
+}
+
+/* ----------------------------------------------------- stage 3 : sample */
+function renderSampleStage() {
+  $("kv-claim").textContent = S.batch.claim + " mg";
+  $("kv-avgwt").textContent = S.batch.avgWt.toFixed(4) + " g";
+  $("powder-val").textContent = powderG().toFixed(4);
+  $("powder-hint").textContent =
+    "Equivalent to about " + ((powderG() / S.batch.avgWt) * S.batch.claim).toFixed(0) +
+    " mg of paracetamol. The method calls for a weight equivalent to 100 mg (" +
+    idealPowderG().toFixed(4) + " g).";
+}
+
+$("powder").addEventListener("input", (e) => {
+  S.powderMg = +e.target.value;
+  S.sampleA = null;
+  $("to-result").disabled = true;
+  $("sample-rows").innerHTML = '<tr><td colspan="3" class="muted">Not measured yet.</td></tr>';
+  $("kv-meanA").textContent = $("kv-meanC").textContent = "—";
+  renderSampleStage();
+});
+
+$("measure-sample").addEventListener("click", () => {
+  if (!S.fit) { return; }
+  /* true concentration in the final flask */
+  const mgTaken = (powderG() / S.batch.avgWt) * S.batch.claim * (S.batch.truePct / 100);
+  const finalConc = (mgTaken * 1000) / 100 / 10 / 10;   // µg/mL after 100 mL then two 1:10 dilutions
+  S.sampleA = [readA(finalConc), readA(finalConc), readA(finalConc)];
+
+  const rows = S.sampleA.map((a, i) => {
+    const c = (a - S.fit.c) / S.fit.m;
+    return "<tr><td>" + (i + 1) + "</td><td>" + a.toFixed(3) + "</td><td>" + c.toFixed(2) + "</td></tr>";
+  }).join("");
+  $("sample-rows").innerHTML = rows;
+
+  const meanA = S.sampleA.reduce((a, b) => a + b, 0) / 3;
+  const meanC = (meanA - S.fit.c) / S.fit.m;
+  $("kv-meanA").textContent = meanA.toFixed(3);
+  $("kv-meanC").textContent = meanC.toFixed(2) + " µg/mL";
+
+  const n = $("sample-note");
+  if (meanA > 1.0) {
+    n.className = "note warn";
+    n.textContent = "Absorbance above 1.0 — outside the calibrated range. Reduce the powder weight or dilute further.";
+  } else if (meanA < 0.1) {
+    n.className = "note warn";
+    n.textContent = "Absorbance below 0.1 — too dilute for a precise result.";
+  } else {
+    n.className = "note ok";
+    n.textContent = "Reading falls within the calibration range. Proceed to the calculation.";
+  }
+  $("to-result").disabled = false;
+  drawCal();
+});
+
+/* ----------------------------------------------------- stage 4 : result */
+function computeResult() {
+  if (!S.fit || !S.sampleA) return;
+  const meanA = S.sampleA.reduce((a, b) => a + b, 0) / 3;
+  const meanC = (meanA - S.fit.c) / S.fit.m;                 // µg/mL, final flask
+  const mgInFlask = (meanC * 100 * 100) / 1000;             // mg in the first 100 mL flask
+  const perTablet = mgInFlask * (S.batch.avgWt / powderG());
+  const pct = (perTablet / S.batch.claim) * 100;
+
+  $("res-mg").textContent = perTablet.toFixed(1) + " mg";
+  $("res-pct").textContent = pct.toFixed(1) + " %";
+
+  $("working").innerHTML =
+    "<p style='margin-top:0'><strong>From the calibration line</strong><br>" +
+    "<code>c = (A − intercept) / slope = (" + meanA.toFixed(3) + " − " +
+    S.fit.c.toFixed(4) + ") / " + S.fit.m.toFixed(5) + " = " + meanC.toFixed(2) + " µg/mL</code></p>" +
+
+    "<p><strong>Undo the dilutions</strong> (100 mL flask, then 10→100 mL twice, so ×100)<br>" +
+    "<code>" + meanC.toFixed(2) + " × 100 × 100 mL ÷ 1000 = " + mgInFlask.toFixed(2) + " mg</code> " +
+    "in the powder taken</p>" +
+
+    "<p><strong>Scale to one tablet</strong><br>" +
+    "<code>" + mgInFlask.toFixed(2) + " × (" + S.batch.avgWt.toFixed(4) + " g ÷ " +
+    powderG().toFixed(4) + " g) = " + perTablet.toFixed(1) + " mg per tablet</code></p>" +
+
+    "<p style='margin-bottom:0'><strong>Percentage of label claim</strong><br>" +
+    "<code>" + perTablet.toFixed(1) + " ÷ " + S.batch.claim + " × 100 = " + pct.toFixed(1) + " %</code></p>";
+
+  const v = $("verdict");
+  if (pct >= 95 && pct <= 105) {
+    v.className = "note ok";
+    v.textContent = "Complies. The batch is within 95.0–105.0 % of the stated amount.";
+  } else {
+    v.className = "note bad";
+    v.textContent = "Does not comply. The result falls outside 95.0–105.0 % of the stated amount — the batch would be rejected.";
+  }
+}
+
+$("new-batch").addEventListener("click", () => {
+  S.batch = newBatch();
+  S.stdA = null; S.fit = null; S.sampleA = null;
+  $("to-sample").disabled = true; $("to-result").disabled = true;
+  $("sample-rows").innerHTML = '<tr><td colspan="3" class="muted">Not measured yet.</td></tr>';
+  $("kv-meanA").textContent = $("kv-meanC").textContent = "—";
+  $("cal-note").className = "note";
+  $("cal-note").textContent = "Set the wavelength, then measure.";
+  renderStandardStage(); renderCalStage(); renderSampleStage();
+  go(0);
+});
+
+/* ---------------------------------------------------------------- init */
+renderStandardStage();
+renderCalStage();
+renderSampleStage();
+renderSteps();
+</script>
+
+</body>
+</html>

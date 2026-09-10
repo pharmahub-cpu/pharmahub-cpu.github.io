@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!-- ===========================================================================
+     SIMULATOR TEMPLATE
+     ---------------------------------------------------------------------------
+     Copy this whole folder, rename it, and edit the marked places.
+
+       1. Copy this folder:
+          copy template-simulation.html to my-new-simulation.html
+       2. Change the <title> and the SimKit.init({...}) block below.
+       3. Write the experiment in the "YOUR SIMULATION" script section.
+       4. Add one entry to resources.js:
+
+            {
+              id: "my-new-simulation",           // must match SimKit id below
+              title: "My New Simulation",
+              description: "One line about it.",
+              type: "simulation",
+              subject: "Pharmaceutical Analysis",
+              category: "Virtual Experiment",
+              url: "./my-new-simulation.html",
+              status: "available"
+            }
+
+       5. Commit. It appears on the site automatically.
+
+     This template folder never appears on the site, because nothing is listed
+     unless it has an entry in the registry.
+     ======================================================================== -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulation Template</title>
+<link rel="stylesheet" href="./sim.css">
+<style>
+  /* Styles specific to THIS simulation go here. */
+</style>
+</head>
+<body>
+
+<!-- The platform header is injected here by simulation-kit.js -->
+<header class="sim-header" id="sim-header"></header>
+
+<main class="sim-main">
+  <div class="sim-wrap">
+
+    <div class="sim-intro">
+      <h2>Title of the experiment</h2>
+      <p>One or two sentences telling the student what they are about to do.</p>
+    </div>
+
+    <!-- Optional progress strip. Remove if the simulation is single-screen. -->
+    <div class="steps" id="steps"></div>
+
+    <div class="bench">
+
+      <!-- LEFT: controls -->
+      <section class="panel">
+        <h2>Controls</h2>
+
+        <div class="field">
+          <label for="param">Parameter <span class="val"><span id="param-val">50</span> units</span></label>
+          <input id="param" type="range" min="0" max="100" step="1" value="50">
+        </div>
+
+        <div class="field">
+          <label for="choice">Choice</label>
+          <select id="choice">
+            <option value="a">Option A</option>
+            <option value="b">Option B</option>
+          </select>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="run" type="button">Run</button>
+          <button class="btn btn-ghost" id="reset" type="button">Reset</button>
+        </div>
+
+        <div class="note" id="msg">Adjust the parameter and press Run.</div>
+      </section>
+
+      <!-- RIGHT: readout -->
+      <section class="panel">
+        <h2>Readout</h2>
+        <div class="readout">
+          <div class="lbl">Result</div>
+          <div class="big" id="result">----</div>
+        </div>
+
+        <div class="tbl-scroll" style="margin-top:16px">
+          <table class="data">
+            <thead><tr><th>Run</th><th>Input</th><th>Output</th></tr></thead>
+            <tbody id="rows"><tr><td colspan="3" class="muted">No runs yet.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- Order matters: resources → progress → simulation-kit → your script -->
+<script src="./resources.js"></script>
+<script src="./progress.js"></script>
+<script src="./simulation-kit.js"></script>
+<script>
+/* ---- EDIT THIS BLOCK ---------------------------------------------------- */
+SimKit.init({
+  id: "my-new-simulation",              // must match the id in resources.js
+  title: "Simulation Template",
+  subject: "Pharmaceutical Analysis",
+  depth: 0                              // a file at the top level = 0
+});
+
+/* ---- YOUR SIMULATION ---------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+const runs = [];
+
+$("param").addEventListener("input", (e) => {
+  $("param-val").textContent = e.target.value;
+});
+
+$("run").addEventListener("click", () => {
+  const input = +$("param").value;
+  const mode = $("choice").value;
+
+  // Replace with the real model for your experiment.
+  const output = (mode === "a" ? input * 0.01 : input * 0.02) + SimKit.noise(0.002);
+
+  $("result").textContent = output.toFixed(3);
+  runs.push({ input, output });
+  $("rows").innerHTML = runs
+    .map((r, i) => "<tr><td>" + (i + 1) + "</td><td>" + r.input + "</td><td>" + r.output.toFixed(3) + "</td></tr>")
+    .join("");
+
+  const n = $("msg");
+  n.className = "note ok";
+  n.textContent = "Run complete.";
+});
+
+$("reset").addEventListener("click", () => {
+  runs.length = 0;
+  $("result").textContent = "----";
+  $("rows").innerHTML = '<tr><td colspan="3" class="muted">No runs yet.</td></tr>';
+  $("msg").className = "note";
+  $("msg").textContent = "Adjust the parameter and press Run.";
+});
+
+/* Helpers available from SimKit:
+     SimKit.round(n, dp)      round to decimal places
+     SimKit.noise(magnitude)  small random measurement error
+     SimKit.linearFit(points) least-squares fit -> { m, c, r2 }
+*/
+</script>
+
+</body>
+</html>

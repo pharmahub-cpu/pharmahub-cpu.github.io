@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UV-Visible Spectrophotometer Virtual Laboratory</title>
+<style>
+:root{
+  --primary:#0e7c86; --primary-dark:#0b5e66; --primary-light:#e3f3f4;
+  --accent:#f2a30f; --accent-dark:#c98300;
+  --ink:#1f2d33; --muted:#5b6b74; --border:#dfe6e9; --bg:#eef3f6;
+  --good:#1e8a5f; --warn:#c98300; --bad:#c0392b;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+header.topbar{background:linear-gradient(120deg,var(--primary-dark),var(--primary));color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+header.topbar h1{font-size:19px;margin:0;display:flex;align-items:center;gap:8px;}
+header.topbar .sub{font-size:12px;opacity:.85;margin-top:2px;}
+.topbar-right{display:flex;gap:8px;flex-wrap:wrap;}
+.pill-btn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;}
+.pill-btn:hover{background:rgba(255,255,255,.26);}
+.progress-wrap{background:rgba(255,255,255,.18);height:7px;}
+.progress-fill{background:var(--accent);height:100%;width:0%;transition:width .4s ease;}
+.progress-text{color:#fff;font-size:11.5px;padding:4px 22px;background:var(--primary-dark);display:flex;justify-content:space-between;}
+.layout{display:flex;gap:18px;padding:18px;align-items:flex-start;max-width:1500px;margin:0 auto;}
+aside.nav-panel{width:230px;flex-shrink:0;background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:14px;}
+aside.nav-panel h4{margin:2px 0 10px;font-size:13px;color:var(--primary-dark);}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;font-size:12.6px;color:var(--muted);cursor:pointer;margin-bottom:2px;}
+.nav-item .num{width:20px;height:20px;border-radius:50%;background:#e4ebed;color:var(--muted);font-size:10.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;}
+.nav-item.done .num{background:var(--good);color:#fff;}
+.nav-item.current{background:var(--primary-light);color:var(--primary-dark);font-weight:700;}
+.nav-item.current .num{background:var(--primary);color:#fff;}
+.nav-item.locked{opacity:.5;cursor:not-allowed;}
+main.workspace{flex:1;min-width:0;background:#fff;border-radius:12px;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+aside.obs-panel{width:280px;flex-shrink:0;background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:sticky;top:14px;}
+aside.obs-panel h3{font-size:14px;color:var(--primary-dark);margin:0 0 8px;}
+table.obs-table{width:100%;border-collapse:collapse;font-size:12px;}
+table.obs-table td{padding:5px 4px;border-bottom:1px solid var(--border);}
+table.obs-table td.val{text-align:right;font-weight:700;color:var(--ink);}
+.feedback-box{background:#fff8ea;border:1px solid #f4d59a;border-radius:8px;padding:10px 12px;font-size:12.3px;color:#7a5300;margin-top:6px;}
+.stage-title{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.stage-title h2{margin:0;font-size:20px;color:var(--primary-dark);}
+.badge{background:var(--primary-light);color:var(--primary-dark);font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;}
+.stage-sub{color:var(--muted);font-size:13px;margin-bottom:9px;}
+.btn{border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer;transition:.12s;}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-primary:disabled{background:#b9c9cf;cursor:not-allowed;}
+.btn-secondary{background:#eef3f6;color:var(--ink);border:1px solid var(--border);}
+.btn-secondary:hover{background:#e1eaee;}
+.btn-secondary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-accent{background:var(--accent);color:#442c00;}
+.btn-accent:hover{background:var(--accent-dark);color:#fff;}
+.btn-accent:disabled{background:#e8d9b8;color:#a08a5c;cursor:not-allowed;}
+.btn-outline{background:transparent;border:1.5px solid var(--primary);color:var(--primary);}
+.btn-outline:hover{background:var(--primary-light);}
+.btn-danger{background:#fdecea;color:#9c2c22;border:1px solid #f3b3ac;}
+.btn-sm{padding:5px 12px;font-size:11.6px;}
+.field-row{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;}
+.field{display:flex;flex-direction:column;gap:4px;min-width:150px;}
+.field label{font-size:12px;font-weight:600;color:var(--muted);}
+.field input,.field select{padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;}
+.field input:disabled{background:#f1f5f6;color:#8a9aa2;}
+.info-note{background:#eef7fb;border:1px solid #c5e1ec;border-radius:8px;padding:8px 12px;font-size:12.8px;color:#2b596c;margin:6px 0;}
+.warn-note{background:#fff4e5;border:1px solid #f4d59a;border-radius:8px;padding:10px 12px;font-size:12.8px;color:#8a5a00;margin:10px 0;}
+.error-note{background:#fdecea;border:1px solid #f3b3ac;border-radius:8px;padding:10px 12px;font-size:12.8px;color:#9c2c22;margin:10px 0;}
+.good-note{background:#eaf7f0;border:1px solid #b9e3ca;border-radius:8px;padding:10px 12px;font-size:12.8px;color:#1e6b45;margin:10px 0;}
+.calc-step{background:#fbfdfe;border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:6px;}
+.calc-step h4{color:var(--primary-dark);font-size:13px;margin:0 0 4px;}
+.why-btn{background:none;border:1px solid var(--primary);color:var(--primary);border-radius:12px;font-size:10.5px;font-weight:700;padding:2px 9px;cursor:pointer;margin-left:6px;}
+.why-box{background:#f5fbfb;border-left:3px solid var(--primary);padding:8px 12px;font-size:12.2px;color:var(--muted);margin:6px 0 10px;border-radius:0 6px 6px 0;}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;letter-spacing:.3px;}
+.tag.locked{background:#eceff0;color:#8a959a;}
+.tag.active{background:#e6f4ec;color:#1e6b45;}
+
+/* ===== INSTRUMENT (photo-realistic bench-top style, persistent across stages) ===== */
+.instrument-shell{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;justify-content:center;padding:8px 6px;background:radial-gradient(ellipse at 50% 100%,#f4fafc 0%,#eef3f6 70%);border-radius:10px;margin:6px 0;}
+.instrument-v2{position:relative;display:flex;gap:12px;background:linear-gradient(180deg,#f3f1ea,#e5e2d8);border:1px solid #cfcabf;border-radius:16px;padding:12px;box-shadow:0 10px 26px rgba(0,0,0,.28);width:100%;}
+.lid-panel{width:34%;flex-shrink:0;background:linear-gradient(155deg,#5c6267,#3a3f43);border-radius:10px;min-height:150px;position:relative;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#c9d3d2;}
+.lid-panel .seam{position:absolute;left:6px;right:6px;top:6px;bottom:6px;border:1px dashed rgba(255,255,255,.15);border-radius:6px;}
+.lid-hinge-label{font-size:9.5px;letter-spacing:1px;text-align:center;color:#aebcbb;opacity:.85;}
+.control-panel{flex:1;display:flex;flex-direction:column;gap:5px;background:linear-gradient(155deg,#54595d,#3d4145);border-radius:10px;padding:8px;min-width:0;}
+.side-buttons-row{display:flex;gap:7px;justify-content:flex-start;padding-left:2px;}
+.round-btn{width:16px;height:16px;border-radius:50%;background:linear-gradient(#dcdcdc,#a3a3a3);border:1px solid #7c7c7c;box-shadow:inset 0 1px 1px #fff,0 1px 2px rgba(0,0,0,.35);}
+.screen-wrap{background:#2b2e30;border-radius:6px;padding:6px;}
+.power-tab{position:absolute;right:-16px;top:50%;transform:translateY(-50%);width:30px;height:54px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;}
+.power-tab:not(.on){animation:switchPulse 1.4s ease-in-out infinite;}
+@keyframes switchPulse{0%,100%{filter:drop-shadow(0 0 0 rgba(211,71,58,.7));}50%{filter:drop-shadow(0 0 7px rgba(211,71,58,.95));}}
+.power-tab.on{animation:switchOnBlink .5s ease-in-out 4;}
+@keyframes switchOnBlink{0%,100%{filter:drop-shadow(0 0 2px #ff6b5e);}50%{filter:drop-shadow(0 0 13px #ff6b5e);}}
+.power-callout{position:absolute;right:6px;top:-32px;display:flex;align-items:center;gap:5px;color:var(--accent-dark);font-weight:800;font-size:11.5px;background:#fff;padding:5px 10px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:7;animation:blinkAnim 1s step-start infinite;white-space:nowrap;}
+.power-callout .arrow{font-size:17px;line-height:1;}
+@keyframes blinkAnim{50%{opacity:.15;}}
+.blink{animation:blinkAnim 1s step-start infinite;}
+/* Small blinking "Press N" / "Press ENTER" prompt shown right next to the
+   on-screen option or field the student should act on next. */
+.press-badge{display:inline-block;background:#d94f30;color:#fff;font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.3px;margin-left:8px;white-space:nowrap;animation:blinkAnim 1s step-start infinite;}
+/* Pulsing glow applied to whichever physical key or on-screen action button
+   is the single correct next step — fill cuvette, open lid, close lid,
+   AUTO ZERO / F1, START/MEASURE, etc. */
+.btn-blink{animation:btnPulseGlow 1.1s ease-in-out infinite;}
+@keyframes btnPulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(217,79,48,.6);}50%{box-shadow:0 0 0 7px rgba(217,79,48,0);}}
+.callout{position:absolute;background:var(--primary);color:#fff;font-size:10.5px;font-weight:700;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:5;}
+.callout-list{padding-left:18px;font-size:12.6px;color:var(--muted);line-height:1.8;margin:12px 0;}
+.callout-num{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--primary);color:#fff;font-size:10px;font-weight:700;align-items:center;justify-content:center;margin-right:6px;}
+
+.instrument-screen{background:#07191b;border-radius:9px;padding:9px 13px;font-family:'Consolas',monospace;box-shadow:inset 0 0 12px #000;height:180px;overflow-y:auto;position:relative;box-sizing:border-box;}
+.instrument-screen .row{display:flex;justify-content:space-between;font-size:12px;color:#5be0c0;padding:2.5px 0;gap:8px;}
+.instrument-screen .row .k{color:#7fb8b0;}
+.instrument-screen .big{font-size:22px;color:#5be0c0;text-align:center;padding:6px 0;letter-spacing:1px;}
+.instrument-screen .center-msg{text-align:center;font-size:12.5px;color:#8fd6c4;padding:10px 0;}
+.instrument-screen.lcd-light{background:#e7e9d9;box-shadow:inset 0 0 10px rgba(0,0,0,.2);}
+.instrument-screen.lcd-light .row{color:#1c1c16;}
+.instrument-screen.lcd-light .row .k{color:#1c1c16;}
+.instrument-screen.lcd-light .row.dim{color:#8b8c7c;}
+.instrument-screen.lcd-light .row.active-row{background:#cdd2b4;border-radius:3px;}
+.instrument-screen.lcd-light .row.editable{cursor:pointer;}
+.instrument-screen.lcd-light .row.editable:hover{background:#d7dbc0;border-radius:3px;}
+.instrument-screen.lcd-light .center-msg{color:#1c1c16;}
+.instrument-screen .hdr{background:#233024;color:#e7e9d9;padding:3px 8px;margin:-12px -14px 8px;border-radius:8px 8px 0 0;font-weight:700;font-size:12px;letter-spacing:.5px;}
+.instrument-screen.lcd-light .hdr{background:#2b2e26;color:#e7e9d9;}
+
+.screen-dialog{position:relative;margin-top:8px;background:#f4f2e6;border:2px solid #4a4a3f;border-radius:4px;padding:8px 10px;color:#1a1a12;font-size:11.3px;box-shadow:2px 2px 0 rgba(0,0,0,.25);}
+.screen-dialog.done{background:#e7f2e6;border-color:#2f6b3f;}
+.screen-dialog .dlg-title{font-weight:800;border-bottom:1px solid #999;margin-bottom:4px;padding-bottom:3px;}
+.screen-dialog .dlg-line{margin:2px 0;}
+
+/* function/key rows below screen — persistent across all stages */
+.fkey-row{display:flex;gap:6px;margin-top:3px;}
+.fkey{flex:1;background:#3a3f43;color:#cfd8d6;border:1px solid #565c5f;border-radius:5px;font-size:9.5px;text-align:center;padding:3px 2px 4px;font-weight:700;cursor:pointer;}
+.fkey:hover{background:#454b4f;}
+.fkey span{display:block;font-weight:600;font-size:8.7px;color:#9fb3af;margin-top:1px;}
+.keys-row{display:flex;gap:8px;align-items:flex-start;margin-top:4px;}
+.side-arrow-pad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;width:64px;flex-shrink:0;}
+.side-arrow-pad .arrow-btn{background:#3a4f57;color:#eef6f8;border:1px solid #56727c;border-radius:5px;font-size:10.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px 0;}
+.side-arrow-pad .arrow-btn:hover{background:#4c6570;}
+.side-arrow-pad .blank-cell{visibility:hidden;}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;flex:1;}
+.keypad button{background:#3a4f57;color:#eef6f8;border:1px solid #56727c;border-radius:6px;padding:8px 0;font-size:14px;font-weight:600;cursor:pointer;}
+.keypad button:hover{background:#4c6570;}
+.keypad button.key-enter{grid-column:span 3;background:#1f7a5c;border-color:#2ea577;}
+.keypad button.key-enter:hover{background:#249a70;}
+.keypad button.key-clear{background:#7a3030;border-color:#a54444;}
+.function-row{display:flex;gap:6px;margin-top:6px;}
+.round-action-btn{flex:1;background:linear-gradient(#4a5761,#333d43);color:#e6ece9;border:1px solid #626f75;border-radius:14px;font-size:10px;font-weight:700;padding:7px 3px;cursor:pointer;text-align:center;}
+.round-action-btn:hover{filter:brightness(1.15);}
+.round-action-btn.green{background:linear-gradient(#7fc79a,#4c9d6c);color:#0c3320;border-color:#3f8659;font-size:12px;padding:9px 3px;}
+.start-row{margin-top:6px;}
+.keypad-block{flex:1;display:grid;grid-template-columns:repeat(3,1fr) repeat(2,0.95fr);grid-template-rows:repeat(4,1fr);gap:5px;grid-template-areas:
+    "n7 n8 n9 .  .  "
+    "n4 n5 n6 .  .  "
+    "n1 n2 n3 gw az"
+    "np n0 nc en ss";}
+.keypad-block button{background:#3a4f57;color:#eef6f8;border:1px solid #56727c;border-radius:6px;padding:5px 0;font-size:12.5px;font-weight:600;cursor:pointer;}
+.keypad-block button:hover{background:#4c6570;}
+.keypad-block button.key-clear{background:#7a3030;border-color:#a54444;}
+.keypad-block button.key-print{font-size:8.5px;}
+.keypad-block button.side-act{border-radius:9px;font-size:8.7px;font-weight:700;padding:2px 2px;background:linear-gradient(#4a5761,#333d43);color:#e6ece9;border:1px solid #626f75;line-height:1.15;}
+.keypad-block button.side-act:hover{filter:brightness(1.15);}
+.keypad-block button.side-act.enter{background:#1f7a5c;border-color:#2ea577;color:#fff;font-size:10px;}
+.keypad-block button.side-act.enter:hover{background:#249a70;}
+.keypad-block button.side-act.green{background:linear-gradient(#7fc79a,#4c9d6c);color:#0c3320;border-color:#3f8659;font-size:9.3px;}
+
+.instrument-compartment{display:flex;align-items:center;justify-content:center;gap:16px;margin:10px 0;}
+.sample-holder{width:120px;height:78px;background:#0e2528;border:2px dashed #3c5a5f;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;}
+.sample-holder.lid-closed{border-style:solid;border-color:#4ee08a;}
+.sample-holder.dual{width:auto;height:auto;flex-direction:column;gap:10px;padding:7px 12px;background:rgba(0,0,0,.18);border:2px dashed rgba(255,255,255,.25);border-radius:10px;}
+.sample-holder.dual.lid-closed{border-style:solid;border-color:#4ee08a;}
+/* Front/back (not side-by-side) layout: the "back" slot sits further along the light
+   path (rendered smaller & higher, offset back) and the "front" slot is nearer the
+   viewer (full size, offset further down/forward) — matching the real instrument's
+   holder, with enough gap between them to read as two distinct depths. */
+.cuvette-slot{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.cuvette-slot.back{transform:scale(.82) translateY(0px);opacity:.8;}
+.cuvette-slot.front{transform:translateY(6px);}
+.slot-label{font-size:8.5px;color:#cfe9e6;letter-spacing:.3px;}
+.cuvette{width:22px;height:38px;background:linear-gradient(#dff2f7,#b7e0ea);border:2px solid #6fa9b8;border-radius:2px;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.cuvette.empty{background:#f1f6f7;opacity:.35;}
+.cuvette.blank{background:linear-gradient(#eaf6fb,#cfeaf3);}
+.cuvette.sample{background:linear-gradient(#eef7d0,#dcefa0);}
+.cuvette.glass{border-color:#c98300;}
+.lid-label{text-align:center;font-size:10.5px;color:#c9d3d2;letter-spacing:.4px;margin-top:4px;}
+/* Cuvettes physically sit inside the compartment, under the lid — once the lid is
+   closed they are covered and no longer visible; only the CLOSED indicator remains. */
+.sample-holder.hidden-contents{background:transparent;border-style:solid;}
+.sample-holder.hidden-contents .cuvette-slot{visibility:hidden;}
+/* Fill tray: dropper + cuvette(s), rendered directly in the lid/compartment area
+   ("above/in front of" the compartment) so filling happens right where the
+   cuvettes will be loaded, not in a separate block below the instrument. */
+.fill-tray{display:flex;align-items:flex-end;justify-content:center;gap:16px;margin-bottom:8px;}
+.fill-tray .slot-label{color:#cfe9e6;}
+.fill-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:0;}
+.dropper{display:flex;flex-direction:column;align-items:center;position:relative;margin-bottom:2px;}
+.dropper svg{display:block;}
+.dropper .drop-anim{position:absolute;top:38px;left:50%;margin-left:-6.5px;animation:dropFall 1s ease-in infinite;}
+@keyframes dropFall{0%{opacity:0;transform:translateY(-2px);}30%{opacity:1;}100%{opacity:0;transform:translateY(14px);}}
+.wl-target-toggle{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+.wl-target-toggle button{flex:1;max-width:160px;}
+.wl-target-toggle button.active{outline:2px solid var(--accent);}
+
+canvas.spectrum-canvas{width:100%;height:280px;background:#fff;border:1px solid var(--border);border-radius:8px;cursor:crosshair;}
+.hover-readout{font-family:'Consolas',monospace;font-size:12.5px;color:var(--primary-dark);background:#f4f9fa;border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:inline-block;margin-top:6px;}
+
+.scan-ticker{text-align:center;font-family:'Consolas',monospace;font-size:15px;color:#1c1c16;font-weight:800;margin:4px 0;}
+.scan-arrow{color:var(--accent-dark);}
+
+.quiz-q{border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:10px;}
+.quiz-q h5{margin:0 0 8px;font-size:13px;}
+.quiz-opt{display:block;width:100%;text-align:left;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:#fff;margin-bottom:6px;cursor:pointer;font-size:12.6px;}
+.quiz-opt.selected{border-color:var(--primary);background:var(--primary-light);}
+.quiz-opt.correct{border-color:var(--good);background:#eaf7f0;}
+.quiz-opt.incorrect{border-color:var(--bad);background:#fdecea;}
+
+footer.footbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;background:#fff;border-top:1px solid var(--border);position:sticky;bottom:0;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(20,30,33,.5);display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal-box{background:#fff;border-radius:12px;padding:22px 24px;max-width:420px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+.modal-box h3{margin:0 0 10px;font-size:16px;color:var(--primary-dark);}
+.modal-box p{font-size:13px;color:var(--muted);line-height:1.5;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+
+.toast-host{position:fixed;bottom:70px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:300;}
+.toast{background:var(--primary-dark);color:#fff;padding:10px 16px;border-radius:8px;font-size:12.8px;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:toast-in .25s ease;max-width:320px;}
+.toast.warn{background:#8a5a00;}
+.toast.bad{background:#9c2c22;}
+.toast.good{background:#1e6b45;}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.instr-field label{color:#dbe7e6;}
+.instr-panel{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:10px;}
+.instr-panel h4{margin-top:0;font-size:13.5px;color:var(--primary-dark);}
+.instr-panel .field-row{margin:8px 0;}
+.drug-edit-row{display:grid;grid-template-columns:1.3fr .7fr .8fr .8fr .8fr auto;gap:6px;align-items:center;font-size:12px;margin-bottom:6px;}
+.drug-edit-row input[type=text],.drug-edit-row input[type=number]{width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-size:12px;}
+
+#printReportArea{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #printReportArea, #printReportArea *{visibility:visible;}
+  #printReportArea{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;}
+}
+
+@media (max-width:980px){
+  .layout{flex-direction:column;}
+  aside.nav-panel,aside.obs-panel{width:100%;position:static;}
+}
+</style>
+
+<style>
+/* ===== Pharma Hub: phone layout =====================================
+   The lab uses a fixed three-column bench (nav | workspace | observations).
+   Below 900px that is wider than the screen, so stack it into one column
+   and let wide tables scroll on their own instead of the page.
+   ==================================================================== */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; padding: 12px; gap: 12px; }
+  aside.nav-panel,
+  aside.obs-panel { width: 100%; position: static; }
+  main.workspace { padding: 14px 15px; }
+  header.topbar { padding: 12px 14px; }
+  header.topbar h1 { font-size: 16px; }
+  header.topbar .sub { font-size: 11px; }
+  .pill-btn { font-size: 11.5px; padding: 6px 10px; }
+}
+@media (max-width: 900px) {
+  /* The instrument drawing has a fixed minimum width. Let that one element
+     scroll sideways rather than stretching the whole page. */
+  main.workspace { min-width: 0; max-width: 100%; }
+  .instrument-shell { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stage-title, .stage-sub { max-width: 100%; }
+}
+@media (max-width: 640px) {
+  main.workspace table,
+  aside.obs-panel table { font-size: 11.5px; }
+  .tbl-scroll, main.workspace > div { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>🔬 UV-Visible Spectrophotometer Virtual Laboratory</h1>
+    <div class="sub">Instrument Operation &amp; Handling Simulation — Pharmaceutical Analysis</div>
+  </div>
+  <div class="topbar-right">
+    <a class="pill-btn" href="./library.html" style="text-decoration:none">← Library</a>
+    <span class="pill-btn" id="modeIndicator">Mode: Student</span>
+    <button class="pill-btn" onclick="App.toggleModePrompt()">Switch Mode</button>
+    <button class="pill-btn" onclick="App.openInstructorPanel()">Instructor Panel</button>
+    <button class="pill-btn" onclick="App.openPrecautions()">Precautions</button>
+    <button class="pill-btn" onclick="App.confirmReset()">Reset Simulation</button>
+    <button class="pill-btn" id="phMarkDone" type="button">Mark complete</button>
+  </div>
+</header>
+<div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-text"><span id="progressText">Progress: 0%</span><span id="stageText">Stage 1 of 15</span></div>
+
+<div class="layout">
+  <aside class="nav-panel"><div id="stageNav"></div></aside>
+  <main class="workspace"><div id="workspace"></div></main>
+  <aside class="obs-panel"><div id="obsPanel"></div></aside>
+</div>
+
+<footer class="footbar">
+  <button class="btn btn-secondary" id="btnPrev" onclick="App.prevStage()">← Previous</button>
+  <button class="btn btn-outline" onclick="App.saveObservation()">💾 Save Observation</button>
+  <button class="btn btn-primary" id="btnNext" onclick="App.nextStage()">Next →</button>
+</footer>
+
+<div id="modalHost"></div>
+<div class="toast-host" id="toastHost"></div>
+<div id="printReportArea"></div>
+
+<script>
+/* =====================================================================
+   UV-VISIBLE SPECTROPHOTOMETER VIRTUAL LABORATORY
+   Vanilla JS, single-file, no external dependencies.
+===================================================================== */
+(function(){
+"use strict";
+
+/* ---------------------------------------------------------------
+   1. CONFIGURATION & DRUG DATABASE
+--------------------------------------------------------------- */
+const DEFAULT_CFG = {
+  instrumentRange: [190,800],
+  moderateWindowNm: 20,
+  variation: 'medium',       // low | medium | high
+  blockOnBadWavelength: false,
+  enforceCuvetteErrors: false,
+  allowRetryMeasurements: true,
+  instructorPassword: 'admin123'
+};
+
+const DEFAULT_DRUGS = {
+  paracetamol:      { key:'paracetamol', name:'Paracetamol', enabled:true, lambdaMax:257, tolLo:252, tolHi:262, scanHi:400, scanLo:200,
+                       desc:'Analgesic / antipyretic, assayed in dilute 0.1 M NaOH.', region:'UV region (200–300 nm)' },
+  ibuprofen:        { key:'ibuprofen', name:'Ibuprofen', enabled:true, lambdaMax:222, tolLo:217, tolHi:227, scanHi:400, scanLo:200,
+                       desc:'NSAID, assayed in alkaline or methanolic medium.', region:'UV region (200–300 nm)' },
+  chloramphenicol:  { key:'chloramphenicol', name:'Chloramphenicol', enabled:true, lambdaMax:278, tolLo:273, tolHi:283, scanHi:400, scanLo:200,
+                       desc:'Broad-spectrum antibiotic, assayed in water/methanol.', region:'UV region (250–350 nm)' },
+  diclofenac:       { key:'diclofenac', name:'Diclofenac Sodium', enabled:true, lambdaMax:276, tolLo:271, tolHi:281, scanHi:400, scanLo:200,
+                       desc:'NSAID, assayed in phosphate buffer / methanol.', region:'UV region (250–350 nm)' }
+};
+
+const VARIATION_PROFILES = {
+  low:    { noiseMag:0.008, lambdaJitter:1 },
+  medium: { noiseMag:0.018, lambdaJitter:2 },
+  high:   { noiseMag:0.030, lambdaJitter:3 }
+};
+
+const STAGES = [
+  {id:'intro',    label:'Instrument Introduction & Power ON'},
+  {id:'setup',    label:'Setup, Blank & Baseline'},
+  {id:'sample',   label:'Sample Loading & Measurement'},
+  {id:'lmax',     label:'Spectrum & λmax / Result'},
+  {id:'result',   label:'Final Observation'}
+];
+
+/* ---------------------------------------------------------------
+   2. GLOBAL MUTABLE STATE
+--------------------------------------------------------------- */
+let CFG = deepCopy(DEFAULT_CFG);
+let DRUGS = deepCopy(DEFAULT_DRUGS);
+let RND = {};
+let OBS = {};
+let UI = {};
+
+function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+function randRange(min,max){ return min + Math.random()*(max-min); }
+function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+function fmt(n,d){ if(n===undefined||n===null||isNaN(n)) return '—'; d=(d===undefined)?2:d; return Number(n).toFixed(d); }
+function gaussianShape(x,center,sigma){ return Math.exp(-Math.pow(x-center,2)/(2*sigma*sigma)); }
+
+function enabledDrugKeys(){ return Object.keys(DRUGS).filter(k=>DRUGS[k].enabled); }
+
+function generateRandomData(){
+  const prof = VARIATION_PROFILES[CFG.variation] || VARIATION_PROFILES.medium;
+  RND = {
+    peakAbsorbance: randRange(0.55,0.85),
+    noiseMag: prof.noiseMag,
+    lambdaShift: Math.round(randRange(-prof.lambdaJitter,prof.lambdaJitter)),
+    variationProfile: CFG.variation
+  };
+}
+
+function freshObservations(){
+  OBS = {
+    studentName:'', rollNumber:'',
+    mode:null, drugKey:null,
+    selectedWavelength:null, wavelengthTier:null,
+    scanStart:null, scanEnd:null, scanRangeOk:null,
+    cuvetteType:null,
+    blankSelected:false, blankFillCount:0, blankFilled:false, blankInserted:false, blankLidOpen:false, blankLidClosed:false,
+    baselineDone:false, baselineRaw:null,
+    sampleFilled:false, sampleInserted:false, sampleLidOpen:false, sampleLidClosed:false,
+    dirtyCuvette:false, bubble:false,
+    absorbance:null, transmittancePct:null,
+    observedLambdaMax:null, peakAbsorbance:null,
+    measurementDone:false, scanDone:false, recorded:false,
+    expDate:new Date().toISOString().slice(0,10)
+  };
+}
+
+function freshUI(){
+  UI = {
+    stage:0, maxStage:0, mode:'student', instructorUnlocked:false,
+    instrumentPower:false,
+    initStep:0, initRunning:false, initDone:false,
+    paramEditing:false, editField:'low',
+    wlBuffer:'', lowBuffer:'', highBuffer:'',
+    scanning:false, currentScanWL:null, fullSpectrumData:null,
+    baselineScanning:false, currentBaselineWL:null, baselineFullData:null,
+    quizAnswers:{}, quizSubmitted:false,
+    whyOpen:{}, showInstructorPanel:false
+  };
+}
+
+function resetExperiment(regenerate){
+  if(regenerate!==false) generateRandomData();
+  freshObservations();
+  freshUI();
+  render();
+  showToast('New simulation run started. Good luck!','good');
+}
+
+/* ---------------------------------------------------------------
+   3. ABSORBANCE / SPECTRUM ENGINE
+--------------------------------------------------------------- */
+function computeAbsorbanceAt(wl){
+  const drug = DRUGS[OBS.drugKey];
+  if(!drug) return 0;
+  const truePeak = drug.lambdaMax + RND.lambdaShift;
+  const sigma = 12.5;
+  const shape = gaussianShape(wl, truePeak, sigma);
+  let a = RND.peakAbsorbance*shape;
+  a += randRange(-RND.noiseMag, RND.noiseMag);
+  if(OBS.dirtyCuvette) a += randRange(0.02,0.05);
+  if(OBS.bubble) a += (Math.random()<0.5?-1:1)*randRange(0.03,0.08);
+  if(OBS.cuvetteType==='glass' && wl<340) a *= 0.15;
+  return Math.max(0, Math.min(1.999, a));
+}
+
+function generateFullSpectrum(){
+  const lo = Math.min(OBS.scanStart,OBS.scanEnd), hi = Math.max(OBS.scanStart,OBS.scanEnd);
+  const data=[];
+  for(let wl=lo; wl<=hi; wl+=1){ data.push({wl, a:computeAbsorbanceAt(wl)}); }
+  return data;
+}
+
+function wavelengthTier(wl){
+  const drug = DRUGS[OBS.drugKey];
+  if(!drug) return null;
+  if(wl>=drug.tolLo && wl<=drug.tolHi) return 1;
+  const dist = Math.min(Math.abs(wl-drug.tolLo), Math.abs(wl-drug.tolHi));
+  if(dist<=CFG.moderateWindowNm) return 2;
+  return 3;
+}
+
+function paramsComplete(){
+  if(!OBS.mode || !OBS.drugKey) return false;
+  if(OBS.mode==='photometric'){
+    if(OBS.selectedWavelength==null) return false;
+    if(CFG.blockOnBadWavelength && OBS.wavelengthTier===3) return false;
+    return true;
+  } else if(OBS.mode==='spectrum'){
+    if(OBS.scanStart==null||OBS.scanEnd==null) return false;
+    if(CFG.blockOnBadWavelength && OBS.scanRangeOk===false) return false;
+    return true;
+  }
+  return false;
+}
+
+/* ---------------------------------------------------------------
+   4. STAGE GATING
+--------------------------------------------------------------- */
+function isStageComplete(i){
+  const id = STAGES[i].id;
+  switch(id){
+    case 'intro': return UI.instrumentPower && UI.initDone;
+    case 'setup':
+      if(!paramsComplete()) return false;
+      return OBS.cuvetteType && (!CFG.enforceCuvetteErrors || OBS.cuvetteType==='quartz') && OBS.blankFilled && OBS.blankInserted && OBS.blankLidClosed && OBS.baselineDone;
+    case 'sample':
+      if(!OBS.sampleInserted || !OBS.sampleLidClosed) return false;
+      if(OBS.mode==='photometric') return OBS.measurementDone;
+      if(OBS.mode==='spectrum') return OBS.scanDone;
+      return false;
+    case 'lmax': return OBS.recorded;
+    case 'result': return true;
+    default: return true;
+  }
+}
+
+function missingReasons(i){
+  const id = STAGES[i].id; const r=[];
+  if(id==='intro'){
+    if(!UI.instrumentPower) r.push('Press the POWER switch on the side panel.');
+    else if(!UI.initDone) r.push('Wait for the initialization checklist to finish.');
+  }
+  if(id==='setup'){
+    if(!OBS.mode) r.push('Press 1 (Photometric) or 2 (Spectrum) on the keypad to select a mode.');
+    else if(!OBS.drugKey) r.push('Click a drug/analyte on the screen, or press its number on the keypad.');
+    else if(OBS.mode==='photometric'){
+      if(OBS.selectedWavelength==null) r.push('Press 2 on the keypad, enter a wavelength and press ENTER.');
+      else if(CFG.blockOnBadWavelength && OBS.wavelengthTier===3) r.push('The selected wavelength is too far from λmax — correct it before proceeding.');
+    } else if(OBS.mode==='spectrum'){
+      if(OBS.scanStart==null||OBS.scanEnd==null) r.push('Press 2 on the keypad, enter the lower then the higher wavelength, and press ENTER.');
+      else if(CFG.blockOnBadWavelength && OBS.scanRangeOk===false) r.push('Your scan range does not include the expected λmax — edit the range.');
+    }
+    if(paramsComplete()){
+      if(!OBS.cuvetteType) r.push('Select a cuvette type (Quartz recommended).');
+      else if(CFG.enforceCuvetteErrors && OBS.cuvetteType!=='quartz') r.push('Switch to a Quartz cuvette before continuing.');
+      else if(!OBS.blankFilled) r.push('Use the dropper to fill both cuvettes with the blank solution.');
+      else if(!OBS.blankLidOpen && !OBS.blankLidClosed) r.push('Open the sample compartment lid.');
+      else if(!OBS.blankInserted) r.push('Place both cuvettes into the sample holder.');
+      else if(!OBS.blankLidClosed) r.push('Close the sample compartment lid.');
+      else if(!OBS.baselineDone) r.push(OBS.mode==='spectrum' ? 'Press the F1 (BaseCorr) key to perform baseline correction.' : 'Press the AUTO ZERO key to perform baseline correction.');
+    }
+  }
+  if(id==='sample'){
+    if(!OBS.sampleFilled) r.push('Use the dropper to fill the sample cuvette.');
+    else if(!OBS.sampleLidOpen && !OBS.sampleLidClosed) r.push('Open the sample compartment lid.');
+    else if(!OBS.sampleInserted) r.push('Place the sample cuvette into the holder.');
+    else if(!OBS.sampleLidClosed) r.push('Close the sample compartment lid.');
+    else if(OBS.mode==='photometric' && !OBS.measurementDone) r.push('Press the green START/MEASURE button.');
+    else if(OBS.mode==='spectrum' && !OBS.scanDone) r.push('Press the green START/MEASURE button to begin the scan.');
+  }
+  if(id==='lmax' && !OBS.recorded) r.push('Click "Record Observation" to confirm the result.');
+  return r;
+}
+
+/* ---------------------------------------------------------------
+   5. NAVIGATION
+--------------------------------------------------------------- */
+function goStage(i){
+  if(i<0||i>=STAGES.length) return;
+  if(i>UI.maxStage){ showWarning('Step locked','Please complete the current instrument operation before continuing. Skipping steps is not permitted on a real instrument either.'); return; }
+  UI.stage=i; render();
+}
+function nextStage(){
+  if(!isStageComplete(UI.stage)){ showWarning('Step not completed', missingReasons(UI.stage).join(' ') || 'Please complete this step before continuing.'); return; }
+  if(UI.stage<STAGES.length-1){ UI.stage++; if(UI.stage>UI.maxStage) UI.maxStage=UI.stage; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+}
+function prevStage(){ if(UI.stage>0){ UI.stage--; render(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function saveObservation(){
+  if(isStageComplete(UI.stage)) showToast('Observation saved.','good');
+  else showWarning('Cannot save yet', missingReasons(UI.stage).join(' '));
+  render();
+}
+
+/* ---------------------------------------------------------------
+   6. RENDER SHELL
+--------------------------------------------------------------- */
+function render(){
+  renderNav(); renderHeader(); renderStage(); renderObsPanel(); renderFooter();
+}
+function renderNav(){
+  const nav=document.getElementById('stageNav');
+  let h='<h4>Instrument Operation Stages</h4>';
+  STAGES.forEach((s,i)=>{
+    let cls='nav-item';
+    if(i===UI.stage) cls+=' current';
+    else if(i>UI.maxStage) cls+=' locked';
+    if(i<UI.stage || (i<=UI.maxStage && isStageComplete(i) && i!==UI.stage)) cls+=' done';
+    h+=`<div class="${cls}" onclick="App.goStage(${i})"><span class="num">${i<UI.maxStage && isStageComplete(i)?'✓':(i+1)}</span><span>${s.label}</span></div>`;
+  });
+  nav.innerHTML=h;
+}
+function renderHeader(){
+  const pct=Math.round((UI.maxStage/(STAGES.length-1))*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent='Progress: '+pct+'%';
+  document.getElementById('stageText').textContent='Stage '+(UI.stage+1)+' of '+STAGES.length;
+  document.getElementById('modeIndicator').textContent='Mode: '+(UI.mode==='instructor'?'Instructor':'Student');
+}
+function renderFooter(){
+  document.getElementById('btnPrev').disabled = UI.stage===0;
+  const btnNext=document.getElementById('btnNext');
+  btnNext.disabled = !isStageComplete(UI.stage) || UI.stage===STAGES.length-1;
+  btnNext.textContent = UI.stage===STAGES.length-1 ? 'Simulation Complete' : 'Next →';
+}
+function renderObsPanel(){
+  const drug = OBS.drugKey ? DRUGS[OBS.drugKey] : null;
+  const rows = [
+    ['Selected Mode', OBS.mode? (OBS.mode==='photometric'?'Photometric':'Spectrum') : '—'],
+    ['Selected Drug', drug? drug.name : '—'],
+    ['Reference λmax', drug? drug.lambdaMax+' nm' : '—'],
+    ['Selected Wavelength', OBS.selectedWavelength? OBS.selectedWavelength+' nm' : '—'],
+    ['Scan Range', (OBS.scanStart!=null&&OBS.scanEnd!=null)? (OBS.scanEnd+' – '+OBS.scanStart+' nm') : '—'],
+    ['Blank Status', OBS.blankInserted&&OBS.blankLidClosed? 'Loaded (×2)' : '—'],
+    ['Baseline Status', OBS.baselineDone? 'Corrected ✓' : 'Pending'],
+    ['Sample Status', OBS.sampleInserted&&OBS.sampleLidClosed? 'Loaded' : '—'],
+    ['Observed λmax', OBS.observedLambdaMax!=null? OBS.observedLambdaMax+' nm' : '—'],
+    ['Peak / Absorbance', OBS.mode==='spectrum'? (OBS.peakAbsorbance!=null?fmt(OBS.peakAbsorbance,3):'—') : (OBS.absorbance!=null?fmt(OBS.absorbance,3):'—')],
+    ['Measurement Status', (OBS.measurementDone||OBS.scanDone)? 'Complete ✓' : 'Pending']
+  ];
+  let h = '<h3>📋 Observation Panel</h3>';
+  h += `<div class="field" style="margin-bottom:10px;"><label>Student Name</label><input type="text" value="${OBS.studentName||''}" oninput="App.setStudentName(this.value)" placeholder="Enter your name"></div>`;
+  h += '<table class="obs-table"><tbody>';
+  rows.forEach(r=>{ h+=`<tr><td>${r[0]}</td><td class="val">${r[1]}</td></tr>`; });
+  h += '</tbody></table>';
+  h += '<h3 style="margin-top:14px;">💡 Laboratory Feedback</h3>' + renderFeedback();
+  document.getElementById('obsPanel').innerHTML = h;
+}
+function renderFeedback(){
+  const tips = {
+    intro:'Learn the instrument’s parts, then press the blinking POWER switch to begin — initialization starts automatically.',
+    setup:'Photometric Mode reads one fixed wavelength; Spectrum Mode scans a whole range — every drug has its own characteristic λmax.',
+    blank:'The blank contains everything the sample does — except the analyte itself. Both cuvettes start out identical.',
+    baseline:'Auto Zero cancels the background absorbance of the solvent and cuvette in both positions.',
+    sample:'Handle cuvettes by their frosted (ribbed) sides only — never touch the optical faces.',
+    lmax:'Compare your observed λmax against the literature value — small deviations are normal.',
+    result:'Print or save your observation before resetting for a new run.'
+  };
+  const id = STAGES[UI.stage].id;
+  return `<div class="feedback-box">${tips[id]||''}</div>`;
+}
+function setStudentName(v){ OBS.studentName=v; }
+
+/* ---------------------------------------------------------------
+   7. TOASTS / MODALS
+--------------------------------------------------------------- */
+function showToast(msg,type){
+  const host=document.getElementById('toastHost');
+  const el=document.createElement('div');
+  el.className='toast'+(type?' '+type:'');
+  el.textContent=msg;
+  host.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); },3200);
+}
+function showWarning(title,msg){
+  const host=document.getElementById('modalHost');
+  host.innerHTML = `<div class="modal-overlay"><div class="modal-box">
+    <h3>⚠️ ${title}</h3><p>${msg}</p>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="App.closeModal()">OK</button></div>
+  </div></div>`;
+}
+function closeModal(){ document.getElementById('modalHost').innerHTML=''; }
+function confirmReset(){
+  const host=document.getElementById('modalHost');
+  host.innerHTML = `<div class="modal-overlay"><div class="modal-box">
+    <h3>Reset Simulation?</h3><p>This will power off the instrument, clear all observations, and start a fresh randomised run. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="App.closeModal();App.resetExperiment();">Reset</button>
+    </div></div></div>`;
+}
+function openPrecautions(){
+  const host=document.getElementById('modalHost');
+  host.innerHTML = `<div class="modal-overlay"><div class="modal-box" style="max-width:520px;">
+    <h3>⚠️ Laboratory Precautions</h3>
+    <ul style="font-size:12.8px;color:var(--muted);line-height:1.7;padding-left:18px;">
+      <li>Always allow the lamp to warm up fully before taking readings.</li>
+      <li>Use quartz cuvettes for UV-region measurements — glass absorbs UV light.</li>
+      <li>Handle cuvettes only by their ribbed/frosted faces; never touch the clear optical faces.</li>
+      <li>Wipe the optical faces with lint-free tissue before inserting into the holder.</li>
+      <li>Always close the sample compartment lid before taking a reading.</li>
+      <li>Perform blank/baseline correction immediately before measuring the sample, at the same wavelength.</li>
+      <li>Never look directly into the light path when the compartment is open.</li>
+    </ul>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="App.closeModal()">Close</button></div>
+  </div></div>`;
+}
+function toggleModePrompt(){
+  if(UI.mode==='instructor'){ UI.mode='student'; render(); showToast('Switched to Student Mode.'); return; }
+  const host=document.getElementById('modalHost');
+  host.innerHTML = `<div class="modal-overlay"><div class="modal-box">
+    <h3>Instructor Login</h3>
+    <p style="font-size:12px;">Educational lock only — not real security.</p>
+    <div class="field"><label>Password</label><input type="password" id="instrPass" placeholder="Enter instructor password"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="App.submitInstructorLogin()">Login</button>
+    </div></div></div>`;
+}
+function submitInstructorLogin(){
+  const val=document.getElementById('instrPass').value;
+  if(val===CFG.instructorPassword){ UI.mode='instructor'; UI.instructorUnlocked=true; closeModal(); render(); showToast('Instructor Mode enabled.','good'); }
+  else showToast('Incorrect password.','bad');
+}
+function whyToggle(key){ UI.whyOpen[key]=!UI.whyOpen[key]; render(); }
+function whyBtn(key){ return `<button class="why-btn" onclick="App.whyToggle('${key}')">Why?</button>`; }
+function whyBox(key,text){ return UI.whyOpen[key] ? `<div class="why-box">${text}</div>` : ''; }
+
+/* Inline SVG icons (not emoji) for the dropper/fill UI and the power switch —
+   emoji glyph coverage for items like a test tube, water droplet, or a physical
+   rocker switch is inconsistent across browsers/OSes and can render as a blank
+   "tofu" box, so these are drawn directly instead. */
+function icoDropper(){
+  return `<svg width="26" height="46" viewBox="0 0 26 46" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 2 Q13 -2 18 2 Q21 6 18 11 L8 11 Q5 6 8 2 Z" fill="#d4e157" stroke="#1a1a1a" stroke-width="1.3" stroke-linejoin="round"/>
+    <rect x="9.5" y="9" width="7" height="4.5" fill="#c0ca33" stroke="#1a1a1a" stroke-width="1.1"/>
+    <path d="M8.5 13.5 L17.5 13.5 L15 40 Q13 44 13 44 Q13 44 11 40 Z" fill="#eef6f8" stroke="#1a1a1a" stroke-width="1.3" stroke-linejoin="round"/>
+    <line x1="10.3" y1="18" x2="10.3" y2="34" stroke="#d3e5e9" stroke-width="1"/>
+  </svg>`;
+}
+function icoDrop(){
+  return `<svg width="13" height="16" viewBox="0 0 13 16" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.5 0 C6.5 0 12.5 8.5 12.5 11.3 C12.5 14.1 9.8 16 6.5 16 C3.2 16 0.5 14.1 0.5 11.3 C0.5 8.5 6.5 0 6.5 0 Z" fill="#d4e157" stroke="#1a1a1a" stroke-width="1.1" stroke-linejoin="round"/>
+  </svg>`;
+}
+function dropperIconHTML(){
+  return `<div class="dropper">${icoDropper()}<div class="drop-anim">${icoDrop()}</div></div>`;
+}
+/* Illuminated red rocker switch (matches a real KCD3-style instrument power
+   switch) — black bezel, red rocker face with an "O" mark, gold solder pins.
+   Glows/blinks (via the .power-tab CSS animations) to draw the eye before and
+   right after it is pressed. */
+function icoPowerSwitch(on){
+  const rocker = on ? '#ff4b3e' : '#b3392e';
+  const rockerLite = on ? '#ff7a6e' : '#c9564a';
+  return `<svg width="30" height="54" viewBox="0 0 30 54" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="28" height="38" rx="4" fill="#161616" stroke="#000" stroke-width="1"/>
+    <rect x="5" y="5" width="20" height="30" rx="3" fill="${rocker}"/>
+    <rect x="5" y="5" width="20" height="13" rx="3" fill="${rockerLite}" opacity=".55"/>
+    <rect x="5" y="19" width="20" height="1.4" fill="#000" opacity=".4"/>
+    <text x="15" y="14.5" font-size="9" font-weight="700" fill="#1c1c1c" text-anchor="middle" font-family="Arial, sans-serif">O</text>
+    <rect x="10" y="27" width="10" height="2" rx="1" fill="#1c1c1c" opacity=".8"/>
+    <rect x="8.5" y="39" width="3" height="8" fill="#cda437"/>
+    <rect x="13.5" y="39" width="3" height="11" fill="#cda437"/>
+    <rect x="18.5" y="39" width="3" height="8" fill="#cda437"/>
+  </svg>`;
+}
+
+/* ---------------------------------------------------------------
+   8. PERSISTENT INSTRUMENT FRAME (screen + F1-F4 + arrows + keypad
+      + AUTO ZERO / GOTO λ / PRINT / START — identical across stages)
+--------------------------------------------------------------- */
+function renderInstrumentFrame(screenInnerHTML, opts){
+  opts = opts || {};
+  const on = UI.instrumentPower;
+  const lidHTML = opts.lidHTML || '<div class="lid-hinge-label">SAMPLE<br>COMPARTMENT<br>LID</div>';
+  /* blinkKeys: which physical key(s) should pulse/glow as the single correct
+     next action — e.g. ['f1'], ['autoZero'], ['start'] — same idea as the
+     "Press N" badges shown on-screen for menu/keypad-digit choices. */
+  const blink = opts.blinkKeys || [];
+  const bc = k => blink.includes(k) ? ' btn-blink' : '';
+  return `<div class="instrument-shell"><div class="instrument-v2" style="max-width:${opts.maxWidth||560}px;">
+    ${opts.overlay||''}
+    <div class="lid-panel">${lidHTML}</div>
+    <div class="control-panel">
+      <div class="side-buttons-row"><div class="round-btn"></div><div class="round-btn"></div><div class="round-btn"></div><div class="round-btn"></div></div>
+      <div class="screen-wrap"><div class="instrument-screen ${on?'lcd-light':''}">${screenInnerHTML}</div></div>
+      <div class="fkey-row">
+        <div class="fkey${bc('f1')}" onclick="App.pressF(1)">F1<span>BaseCorr</span></div>
+        <div class="fkey" onclick="App.pressF(2)">F2<span>SmplCmpt</span></div>
+        <div class="fkey" onclick="App.pressF(3)">F3<span>MeasScrn</span></div>
+        <div class="fkey" onclick="App.pressF(4)">F4<span>SavParam</span></div>
+      </div>
+      <div class="keys-row">
+        <div class="side-arrow-pad">
+          <div class="blank-cell"></div><div class="arrow-btn" onclick="App.pressArrow('up')">▲</div><div class="blank-cell"></div>
+          <div class="arrow-btn" onclick="App.pressArrow('left')">◄</div><div class="blank-cell"></div><div class="arrow-btn" onclick="App.pressArrow('right')">►</div>
+          <div class="blank-cell"></div><div class="arrow-btn" onclick="App.pressArrow('down')">▼</div><div class="blank-cell"></div>
+        </div>
+        <div class="keypad-block">
+          <button style="grid-area:n7" onclick="App.keyPress(7)">7</button>
+          <button style="grid-area:n8" onclick="App.keyPress(8)">8</button>
+          <button style="grid-area:n9" onclick="App.keyPress(9)">9</button>
+          <button style="grid-area:n4" onclick="App.keyPress(4)">4</button>
+          <button style="grid-area:n5" onclick="App.keyPress(5)">5</button>
+          <button style="grid-area:n6" onclick="App.keyPress(6)">6</button>
+          <button style="grid-area:n1" onclick="App.keyPress(1)">1</button>
+          <button style="grid-area:n2" onclick="App.keyPress(2)">2</button>
+          <button style="grid-area:n3" onclick="App.keyPress(3)">3</button>
+          <button style="grid-area:np" class="key-print" onclick="App.pressPrint()">PRINT</button>
+          <button style="grid-area:n0" onclick="App.keyPress(0)">0</button>
+          <button style="grid-area:nc" class="key-clear" onclick="App.keyClear()">CE</button>
+          <button style="grid-area:gw" class="side-act" onclick="App.pressGotoWL()">GOTO λ</button>
+          <button style="grid-area:az" class="side-act${bc('autoZero')}" onclick="App.pressAutoZero()">AUTO ZERO</button>
+          <button style="grid-area:en" class="side-act enter${bc('enter')}" onclick="App.keyEnter()">ENTER</button>
+          <button style="grid-area:ss" class="side-act green${bc('start')}" onclick="App.pressStart()">START/ MEASURE</button>
+        </div>
+      </div>
+    </div>
+    ${opts.powerTab!==false? `<div class="power-tab ${on?'on':''}" onclick="App.powerOn()" title="Power Switch (side panel)">${icoPowerSwitch(on)}</div>` : ''}
+  </div></div>`;
+}
+
+/* Physical-button dispatch — behaviour depends on the current stage/state,
+   exactly like a real instrument's context-sensitive keys. */
+function requirePower(){
+  if(!UI.instrumentPower){ showToast('Instrument is off — press the POWER switch first.','warn'); return false; }
+  return true;
+}
+function keyPress(n){
+  if(!requirePower()) return;
+  const id = STAGES[UI.stage].id;
+  if(id!=='setup') return;
+  if(!OBS.mode){
+    if(n===1){ selectMode('photometric'); return; }
+    if(n===2){ selectMode('spectrum'); return; }
+    showToast('That mode is not enabled in this simulation.','warn');
+    return;
+  }
+  if(!OBS.drugKey){
+    const keys = enabledDrugKeys();
+    const idx = n-1;
+    if(idx>=0 && idx<keys.length){ selectDrug(keys[idx]); }
+    else { showToast('Press the number of a listed drug (1–'+keys.length+'), or click it on the screen.','warn'); }
+    return;
+  }
+  if(UI.paramEditing){ digitEntry(n); return; }
+  if(!paramsComplete()){
+    if(n===2) toggleParamEdit();
+    return;
+  }
+  if(!OBS.cuvetteType){
+    if(n===1){ selectCuvetteType('quartz'); return; }
+    if(n===2){ selectCuvetteType('glass'); return; }
+    showToast('Press 1 for Quartz or 2 for Glass.','warn');
+  }
+}
+function keyClear(){
+  if(!requirePower()) return;
+  const id = STAGES[UI.stage].id;
+  if(id!=='setup' || !UI.paramEditing) return;
+  if(OBS.mode==='photometric'){ UI.wlBuffer=''; OBS.selectedWavelength=null; OBS.wavelengthTier=null; }
+  else { UI.lowBuffer=''; UI.highBuffer=''; UI.editField='low'; OBS.scanStart=null; OBS.scanEnd=null; OBS.scanRangeOk=null; }
+  render();
+}
+function keyEnter(){
+  if(!requirePower()) return;
+  const id = STAGES[UI.stage].id;
+  if(id!=='setup' || !UI.paramEditing) return;
+  const lo=CFG.instrumentRange[0], hi=CFG.instrumentRange[1];
+  if(OBS.mode==='photometric'){
+    const v=parseInt(UI.wlBuffer,10);
+    if(!v||v<lo||v>hi){ showToast('Enter a wavelength within the instrument range ('+lo+'–'+hi+' nm).','warn'); return; }
+    OBS.selectedWavelength=v; OBS.wavelengthTier=wavelengthTier(v); UI.wlBuffer=''; UI.paramEditing=false;
+    showToast('Wavelength set to '+v+' nm.','good');
+    render();
+    return;
+  }
+  const lowV=parseInt(UI.lowBuffer,10), highV=parseInt(UI.highBuffer,10);
+  if(!lowV||!highV||lowV<lo||highV>hi||lowV>=highV){
+    showToast('Enter the LOWER wavelength first, then a HIGHER wavelength (both within '+lo+'–'+hi+' nm).','warn');
+    return;
+  }
+  OBS.scanEnd=lowV; OBS.scanStart=highV;
+  const d=DRUGS[OBS.drugKey];
+  OBS.scanRangeOk = (d.lambdaMax<=OBS.scanStart && d.lambdaMax>=OBS.scanEnd);
+  UI.paramEditing=false; UI.lowBuffer=''; UI.highBuffer=''; UI.editField='low';
+  if(!OBS.scanRangeOk) showToast('Scan range does not include the expected λmax.','warn');
+  else showToast('Scan range set: '+OBS.scanEnd+' – '+OBS.scanStart+' nm.','good');
+  render();
+}
+function digitEntry(n){
+  if(OBS.mode==='photometric'){
+    if(UI.wlBuffer.length>=3) return;
+    UI.wlBuffer += String(n);
+    render();
+    return;
+  }
+  if(UI.editField==='low'){
+    if(UI.lowBuffer.length<3){ UI.lowBuffer+=String(n); if(UI.lowBuffer.length>=3) UI.editField='high'; }
+  } else {
+    if(UI.highBuffer.length<3){ UI.highBuffer+=String(n); }
+  }
+  render();
+}
+function pressArrow(dir){
+  if(!requirePower()) return;
+  /* Decorative navigation keys — shown for realism, no dedicated
+     function required by the current stage flow. */
+}
+function pressGotoWL(){
+  if(!requirePower()) return;
+  const id = STAGES[UI.stage].id;
+  if(id!=='setup' || !OBS.mode || !OBS.drugKey){ showToast('Select a mode and drug first.','warn'); return; }
+  if(!UI.paramEditing) toggleParamEdit();
+}
+function readyForBaseline(){ return STAGES[UI.stage].id==='setup' && OBS.blankLidClosed && !OBS.baselineDone; }
+function pressAutoZero(){
+  if(!requirePower()) return;
+  if(!readyForBaseline()){ showToast('AUTO ZERO is used for baseline correction, once the blank is loaded and the lid is closed.','warn'); return; }
+  if(OBS.mode==='spectrum'){ showToast('In Spectrum Mode, use the F1 (BaseCorr) key instead.','warn'); return; }
+  autoZero();
+}
+function pressF(n){
+  if(!requirePower()) return;
+  if(n===1){
+    if(readyForBaseline()){
+      if(OBS.mode==='photometric'){ showToast('In Photometric Mode, use the AUTO ZERO key instead.','warn'); return; }
+      startBaselineScan();
+      return;
+    }
+    showToast('F1 (BaseCorr) is used for baseline correction, once the blank is loaded and the lid is closed.','warn');
+    return;
+  }
+  showToast('F'+n+' — demonstration only in this simulation.');
+}
+function pressPrint(){
+  if(!requirePower()) return;
+  if(STAGES[UI.stage].id==='result'){ generateReport(); return; }
+  showToast('Nothing to print yet — finish the run first.','warn');
+}
+function pressStart(){
+  if(!requirePower()) return;
+  if(STAGES[UI.stage].id!=='sample'){ showToast('START/MEASURE is used once the sample is loaded.','warn'); return; }
+  if(!OBS.sampleInserted || !OBS.sampleLidClosed){ showWarning('Close the lid','Load the sample cuvette and close the sample compartment lid first.'); return; }
+  if(OBS.mode==='photometric') measurePhotometric();
+  else startScan();
+}
+
+/* ---------------------------------------------------------------
+   9. STAGE DISPATCH
+--------------------------------------------------------------- */
+function stageHeader(icon,title,sub){
+  return `<div class="stage-title"><span style="font-size:22px">${icon}</span><h2>${title}</h2><span class="badge">Stage ${UI.stage+1}/${STAGES.length}</span></div><div class="stage-sub">${sub}</div>`;
+}
+function renderStage(){
+  const ws=document.getElementById('workspace');
+  const id=STAGES[UI.stage].id;
+  const fns = {
+    intro:renderIntro, setup:renderSetup,
+    sample:renderSampleMeasure, lmax:renderSpectrumStage, result:renderResult
+  };
+  ws.innerHTML = (fns[id]||function(){return '';})() + renderInstructorPanelHTML();
+  if(id==='lmax' && OBS.mode==='spectrum' && OBS.scanDone) drawSpectrumCanvas('spectrumCanvas', false);
+  if(id==='sample' && OBS.mode==='spectrum') drawSpectrumCanvas('spectrumCanvasIn', true);
+  if(id==='setup' && OBS.mode==='spectrum' && UI.baselineScanning) drawBaselineCanvas('baselineCanvasIn');
+}
+
+/* ---- STAGE 1: INTRODUCTION + POWER ON + INITIALIZATION (merged) ---- */
+const INIT_CHECKS = ['LSI Initialize','ROM Check','RAM Check','Filter Initialize','Lamp Motor Initialize','WL Motor Initialize','Xe Lamp Energy','WL Origin Search','D2 Lamp Energy','WL Check'];
+function renderIntro(){
+  const on = UI.instrumentPower;
+  if(!on){
+    const screenHTML = '';
+    const overlay = `
+      <div class="callout" style="top:6px;left:12%;">1</div>
+      <div class="callout" style="top:34px;left:40%;">2</div>
+      <div class="power-callout">Press POWER ON <span class="arrow">⬇</span></div>`;
+    return stageHeader('🔬','Instrument Introduction &amp; Power ON','Meet the UV-Visible spectrophotometer, learn its parts, then press the blinking POWER switch.') +
+    renderInstrumentFrame(screenHTML,{maxWidth:600, overlay}) + `
+    <ol class="callout-list">
+      <li><span class="callout-num">1</span><b>Sample Compartment Lid</b> — dark grey cover on the left housing the cuvette holder(s). It must be closed during every measurement.</li>
+      <li><span class="callout-num">2</span><b>Control Panel</b> — display screen, F1–F4 keys, arrow keys, numeric keypad, GOTO λ / AUTO ZERO / PRINT and the green START/MEASURE button.</li>
+    </ol>
+    <div class="info-note">This is a virtual UV-Visible spectrophotometer, modelled on a real bench-top instrument used in pharmaceutical analysis laboratories. Click the blinking <b>POWER switch</b> on the side panel (right edge) to switch it on — initialization will start automatically.</div>
+    <div class="warn-note">You must complete each step in sequence, just like operating a real laboratory instrument. Steps cannot be skipped.</div>`;
+  }
+  const step=UI.initStep;
+  const lines = INIT_CHECKS.map((c,i)=>`<div class="row ${i>=step?'dim':''}"><span class="k">${c}</span><span>${i<step?'OK':(i===step&&UI.initRunning?'…':'')}</span></div>`).join('');
+  const screenHTML = `<div class="hdr">Initialization</div>${lines}
+    <div class="row" style="margin-top:6px;font-size:9.5px;opacity:.65;"><span>${new Date().toISOString().slice(0,10)}</span><span>System Ver 1.12</span></div>`;
+  return stageHeader('🔬','Instrument Introduction &amp; Power ON','The instrument is initialising its subsystems automatically.') +
+  renderInstrumentFrame(screenHTML,{maxWidth:600}) +
+  (UI.initDone? '<div class="good-note">✓ All subsystems initialised successfully. Opening the measurement mode menu…</div>' : '<div class="info-note">The instrument is checking each subsystem automatically — please wait.</div>');
+}
+function powerOn(){
+  if(UI.instrumentPower) return;
+  UI.instrumentPower=true;
+  showToast('Instrument powered on.','good');
+  render();
+  startInit();
+}
+function startInit(){
+  if(UI.initRunning||UI.initDone) return;
+  UI.initRunning=true; UI.initStep=0; render();
+  const timer=setInterval(()=>{
+    UI.initStep++;
+    if(UI.initStep>=INIT_CHECKS.length){
+      clearInterval(timer); UI.initRunning=false; UI.initDone=true;
+      showToast('Initialization complete — instrument ready.','good');
+      render();
+      setTimeout(()=>{ if(UI.stage===0 && isStageComplete(0)) nextStage(); }, 700);
+      return;
+    }
+    render();
+  },400);
+}
+
+/* ---- STAGE 2: MODE, DRUG & PARAMETERS (screen swaps, no stacking) ---- */
+const MODE_LIST = [
+  {key:'photometric', name:'1. Photometric Mode', active:true},
+  {key:'spectrum', name:'2. Spectrum Mode', active:true},
+  {key:'quant', name:'3. Quantitation Mode', active:false},
+  {key:'kinetics', name:'4. Kinetics Mode', active:false},
+  {key:'multiwl', name:'5. Multi-Wavelength Mode', active:false},
+  {key:'system', name:'6. System / Utility Mode', active:false}
+];
+function headerLabelFor(mode){ return mode==='photometric'?'Photometric':'Spectrum'; }
+function blankLidPanelHTML(lidReady){
+  if(!OBS.blankFilled){
+    const n1 = OBS.blankFillCount>=1, n2 = OBS.blankFillCount>=2;
+    const fillingSecond = n1 && !n2;
+    const nextLabel = n1 ? 'Cuvette 2' : 'Cuvette 1';
+    /* The dropper is rendered directly above whichever cuvette is next to be
+       filled — placed over it, not floating in a separate column. */
+    return `<div class="fill-tray">
+        <div class="fill-col">
+          ${!n1 ? dropperIconHTML() : ''}
+          <div class="cuvette-slot"><div class="cuvette ${n1?'blank':'empty'} ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 1</div></div>
+        </div>
+        <div class="fill-col">
+          ${fillingSecond ? dropperIconHTML() : ''}
+          <div class="cuvette-slot"><div class="cuvette ${n2?'blank':'empty'} ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 2</div></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-blink" style="white-space:nowrap;" onclick="App.dropBlank()">Add Blank to ${nextLabel}</button>`;
+  }
+  if(!lidReady){
+    return `<div class="fill-tray">
+        <div class="fill-col"><div class="cuvette-slot"><div class="cuvette blank ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 1</div></div></div>
+        <div class="fill-col"><div class="cuvette-slot"><div class="cuvette blank ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 2</div></div></div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-blink" style="white-space:nowrap;" onclick="App.openBlankLid()">🔓 Open Lid</button>`;
+  }
+  if(OBS.blankLidClosed){
+    /* Lid closed: the cuvettes are inside the compartment, under the lid — not visible. */
+    return `<div class="lid-hinge-label">SAMPLE<br>COMPARTMENT<br>LID</div><div class="lid-label" style="color:#4ee08a;">LID: CLOSED</div>`;
+  }
+  if(!OBS.blankInserted){
+    return `<div class="sample-holder dual">
+        <div class="cuvette-slot back"><div class="cuvette empty"></div><div class="slot-label">Back</div></div>
+        <div class="cuvette-slot front"><div class="cuvette empty"></div><div class="slot-label">Front</div></div>
+      </div><div class="lid-label">LID: OPEN</div>
+      <button class="btn btn-primary btn-sm btn-blink" style="margin-top:6px;white-space:nowrap;" onclick="App.insertBlank()">Place Cuvettes</button>`;
+  }
+  return `<div class="sample-holder dual">
+      <div class="cuvette-slot back"><div class="cuvette blank ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 2 — Back</div></div>
+      <div class="cuvette-slot front"><div class="cuvette blank ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 1 — Front</div></div>
+    </div><div class="lid-label">LID: OPEN</div>
+    <button class="btn btn-primary btn-sm btn-blink" style="margin-top:6px;white-space:nowrap;" onclick="App.closeBlankLid()">Close Lid</button>`;
+}
+function renderSetup(){
+  const done = paramsComplete();
+  let screenHTML, lidHTML;
+  if(!OBS.mode){
+    const rows = MODE_LIST.map((m,idx)=>{
+      const cls='row'+(!m.active?' dim':'');
+      const trailing = m.active ? `<span class="press-badge">Press ${idx+1}</span>` : 'Not enabled';
+      return `<div class="${cls}"><span class="k">${m.name}</span><span>${trailing}</span></div>`;
+    }).join('');
+    screenHTML = `<div class="hdr">Select Mode</div>${rows}<div class="row" style="margin-top:6px;font-size:9.5px;opacity:.7;">Click an option, or press its number on the keypad</div>`;
+  } else if(!OBS.drugKey){
+    const dKeys = enabledDrugKeys();
+    const dRows = dKeys.map((k,idx)=>`<div class="row editable" onclick="App.selectDrug('${k}')"><span class="k">${idx+1}. ${DRUGS[k].name}</span><span>λmax≈${DRUGS[k].lambdaMax}nm</span></div>`).join('');
+    screenHTML = `<div class="hdr">${headerLabelFor(OBS.mode)} — Select Drug</div>${dRows}<div class="row" style="margin-top:6px;font-size:9.5px;opacity:.7;">Click a drug, or press its number on the keypad</div>`;
+  } else if(!done){
+    screenHTML = paramScreenInnerHTML();
+  } else if(!OBS.cuvetteType){
+    /* Cuvette type is chosen right on the instrument's own screen, exactly like
+       the mode and drug menus above. */
+    screenHTML = `<div class="hdr">Select Cuvette Type</div>
+      <div class="row editable" onclick="App.selectCuvetteType('quartz')"><span class="k">1. Quartz</span><span>Recommended <span class="press-badge">Press 1</span></span></div>
+      <div class="row editable" onclick="App.selectCuvetteType('glass')"><span class="k">2. Glass</span><span>Absorbs UV <span class="press-badge">Press 2</span></span></div>
+      <div class="row" style="margin-top:6px;font-size:9.5px;opacity:.7;">Click an option, or press its number on the keypad</div>`;
+  } else {
+    /* Cuvette type chosen: screen + lid graphic now show the blank-fill / baseline
+       state, all on this SAME page — no stage transition. */
+    const lidReady = OBS.blankLidOpen || OBS.blankLidClosed;
+    if(OBS.baselineDone){
+      screenHTML = `<div class="hdr">${headerLabelFor(OBS.mode)}</div><div class="screen-dialog done"><div class="dlg-title">Baseline Corrected</div><div class="dlg-line">A = 0.000</div></div>`;
+    } else if(UI.baselineScanning){
+      screenHTML = `<div class="hdr">Spectrum — Baseline</div>
+        <div class="row" style="font-size:9.5px;opacity:.8;"><span>${OBS.scanEnd}–${OBS.scanStart} nm</span><span>MEASURING…</span></div>
+        <div class="scan-ticker">${OBS.scanStart} nm <span class="scan-arrow">↓</span> ${UI.currentBaselineWL} nm <span class="scan-arrow">↓</span> ${OBS.scanEnd} nm</div>
+        <canvas id="baselineCanvasIn" width="440" height="150" style="width:100%;height:112px;background:#dfe3cf;border-radius:4px;margin-top:4px;display:block;"></canvas>`;
+    } else if(OBS.blankLidClosed){
+      if(OBS.baselineRaw==null) OBS.baselineRaw = Math.round(randRange(0.005,0.05)*1000)/1000;
+      const which = OBS.mode==='spectrum' ? 'the F1 (BaseCorr) key' : 'the AUTO ZERO key';
+      screenHTML = `<div class="hdr">${headerLabelFor(OBS.mode)}</div>
+        <div class="screen-dialog">
+          <div class="dlg-title">Baseline Correction</div>
+          <div class="dlg-line">Raw signal: A = ${fmt(OBS.baselineRaw,3)}</div>
+          <div class="dlg-line">Press ${which} to perform Auto Zero.</div>
+        </div>`;
+    } else {
+      screenHTML = `<div class="center-msg">${OBS.blankInserted?'BOTH CUVETTES: BLANK':(lidReady?'SAMPLE COMPARTMENT — OPEN':'SAMPLE COMPARTMENT — CLOSED')}</div>`;
+    }
+    lidHTML = blankLidPanelHTML(lidReady);
+  }
+  /* Blink the one physical key that is the correct next press: ENTER once a
+     wavelength/range value has been typed in, or AUTO ZERO / F1 once the
+     blank is loaded and the lid is closed. */
+  const paramEnterReady = !done && OBS.mode && OBS.drugKey && UI.paramEditing &&
+    ((OBS.mode==='spectrum' && UI.editField==='high' && UI.highBuffer.length>=1) ||
+     (OBS.mode==='photometric' && UI.wlBuffer.length>=1));
+  let blinkKeys = [];
+  if(paramEnterReady) blinkKeys = ['enter'];
+  else if(readyForBaseline() && !UI.baselineScanning) blinkKeys = [OBS.mode==='spectrum' ? 'f1' : 'autoZero'];
+  const frameOpts = Object.assign({maxWidth:620}, lidHTML?{lidHTML}:{}, blinkKeys.length?{blinkKeys}:{});
+  let html = stageHeader('🗂️','Mode, Drug, Parameter Setup &amp; Blank','Configure the instrument, then prepare and load the blank — all on this single page, no page change needed.') +
+    renderInstrumentFrame(screenHTML, frameOpts);
+
+  /* Progressive single-block disclosure: only ONE instructional block below the
+     instrument is shown at a time, based on the current sub-step, so the page
+     never needs to scroll. The action buttons themselves live on the instrument's
+     own compartment-lid graphic above (not duplicated here). */
+  if(!OBS.mode){
+    html += '<div class="info-note">Press <b>1</b> (Photometric) or <b>2</b> (Spectrum) on the instrument keypad above. The other four modes are shown for realism but are not enabled in this simulation — "Not enabled".</div>';
+  } else if(!OBS.drugKey){
+    html += '<div class="info-note">Click a drug/analyte directly on the instrument screen above, or press its number on the keypad.</div>';
+  } else if(!done){
+    const d = DRUGS[OBS.drugKey];
+    html += `<div class="calc-step"><h4>⚙️ ${DRUGS[OBS.drugKey].name} — Instrument Parameters (${headerLabelFor(OBS.mode)}) ${whyBtn('params')}</h4>
+    ${whyBox('params','Real instruments show a numbered parameter menu like this one. Press the item number on the keypad (item 2 — wavelength / scan range) to edit it; the other items are shown for realism and are fixed for this simulation. The GOTO λ key also jumps straight to item 2.')}`;
+    if(UI.paramEditing){
+      html += '<div class="info-note">Type the value using the keypad, then press ENTER. '+(OBS.mode==='spectrum'? 'Enter the LOWER wavelength first (3 digits), the cursor then moves to the HIGHER wavelength.':'')+'</div>';
+    }
+    if(OBS.mode==='photometric' && OBS.wavelengthTier){
+      const t=tierNote(OBS.wavelengthTier); html += `<div class="${t.cls}">${t.text}</div>`;
+    }
+    if(OBS.mode==='spectrum' && OBS.scanRangeOk===false){
+      html += `<div class="warn-note">⚠️ Scan range problem — your selected range does not include the expected absorption maximum. <button class="btn btn-outline btn-sm" onclick="App.editRangeAgain()">Edit Range</button></div>`;
+    } else if(OBS.mode==='spectrum' && OBS.scanRangeOk===true){
+      html += `<div class="good-note">✓ Scan range includes the expected λmax.</div>`;
+    }
+    html += `<div class="info-note">Recommended for <b>${d.name}</b>: λmax ≈ ${d.lambdaMax} nm${OBS.mode==='spectrum'?' — scan range should be '+d.scanLo+' → '+d.scanHi+' nm':''}.</div></div>`;
+  } else if(!OBS.cuvetteType){
+    html += '<div class="info-note">Click a cuvette type directly on the instrument screen above, or press 1 (Quartz) or 2 (Glass) on the keypad.</div>';
+  } else {
+    /* Blank preparation & baseline correction — the fill/open/place/close actions
+       all happen on the instrument's compartment graphic above; only a short
+       status note is shown here. */
+    const lidReady = OBS.blankLidOpen || OBS.blankLidClosed;
+    const glassWarn = OBS.cuvetteType==='glass' ? '<div class="warn-note">⚠️ Glass cuvettes absorb UV light — quartz cuvettes are preferred/required for UV-region measurements.'+(CFG.enforceCuvetteErrors?' You must switch to quartz to continue.':' You may continue, but the resulting reading will be unreliable.')+'</div>' : '';
+    if(!OBS.blankFilled){
+      html += `<div class="calc-step"><h4>🔷 Step 1 — Fill the Cuvettes with Blank ${whyBtn('blank')}</h4>
+        ${whyBox('blank','The blank contains the solvent/reagent matrix without the analyte. Measuring it in both cuvette positions lets the instrument subtract the background absorbance of everything except the drug itself.')}
+        ${glassWarn}
+        <div class="info-note">Use the dropper on the compartment above to fill both cuvettes with the blank solution.</div></div>`;
+    } else if(!lidReady){
+      html += glassWarn + '<div class="info-note">✓ Both cuvettes filled with blank. Now press <b>🔓 Open Lid</b> on the compartment above to access the sample holder.</div>';
+    } else if(!OBS.blankInserted){
+      html += '<div class="info-note">Step 2 — Press <b>Place Cuvettes</b> on the compartment above: one at the front, one at the back.</div>';
+    } else if(!OBS.blankLidClosed){
+      html += '<div class="info-note">Step 3 — Press <b>Close Lid</b> on the compartment above.</div>';
+    } else if(!OBS.baselineDone){
+      const which = OBS.mode==='spectrum' ? 'F1 (BaseCorr)' : 'AUTO ZERO';
+      html += `<div class="calc-step"><h4>🔷 Baseline Correction ${whyBtn('baseline')}</h4>
+        ${whyBox('baseline','Even a "blank" cuvette absorbs a small amount of light from the solvent and the cuvette walls. Auto Zero records this and subtracts it from every later reading.')}
+        <div class="info-note">Press <b>${which}</b> on the instrument panel above to perform baseline correction.${OBS.mode==='spectrum'?' The instrument sweeps the blank from the higher wavelength down to the lower wavelength, just like a real scan — expect a flat line near zero absorbance.':''}</div></div>`;
+    } else {
+      html += '<div class="good-note">✓ Both cuvettes loaded with blank, and baseline correction completed. Moving on to load the sample…</div>';
+    }
+  }
+  return html;
+}
+function selectMode(key){
+  const m = MODE_LIST.find(x=>x.key===key);
+  if(!m||!m.active) return;
+  OBS.mode = key;
+  showToast((key==='photometric'?'Photometric':'Spectrum')+' Mode selected.','good');
+  render();
+}
+function selectDrug(key){
+  if(!key) return;
+  if(!DRUGS[key]||!DRUGS[key].enabled) return;
+  OBS.drugKey = key;
+  OBS.selectedWavelength=null; OBS.wavelengthTier=null; OBS.scanStart=null; OBS.scanEnd=null; OBS.scanRangeOk=null;
+  UI.paramEditing=false; UI.editField='low'; UI.wlBuffer=''; UI.lowBuffer=''; UI.highBuffer='';
+  showToast(DRUGS[key].name+' selected.','good');
+  render();
+}
+function tierNote(tier){
+  if(tier===1) return {cls:'good-note', text:'✓ Suitable wavelength — close to the reported λmax and appropriate for photometric measurement.'};
+  if(tier===2) return {cls:'warn-note', text:'⚠️ Wavelength is away from λmax — maximum sensitivity may not be obtained at this wavelength.'};
+  return {cls:'error-note', text:'❌ Incorrect wavelength selection — the selected wavelength is outside the recommended region for this analyte. Review λmax before proceeding.'};
+}
+function paramScreenInnerHTML(){
+  const editing = UI.paramEditing;
+  let header, rows, enterReady;
+  if(OBS.mode==='spectrum'){
+    header='Spectrum';
+    const lowSpan = editing ? `<span class="${UI.editField==='low'?'blink':''}">${UI.lowBuffer||(UI.editField==='low'?'___':(OBS.scanEnd!=null?OBS.scanEnd:'---'))}</span>` : (OBS.scanEnd!=null?OBS.scanEnd:'---');
+    const highSpan = editing ? `<span class="${UI.editField==='high'?'blink':''}">${UI.highBuffer||(UI.editField==='high'?'___':(OBS.scanStart!=null?OBS.scanStart:'---'))}</span>` : (OBS.scanStart!=null?OBS.scanStart:'---');
+    const rangeVal = lowSpan+' - '+highSpan+' nm';
+    enterReady = editing && UI.editField==='high' && UI.highBuffer.length>=1;
+    rows = [
+      ['1.','Meas. mode','Abs',false],
+      ['2.','Scan range', rangeVal, true],
+      ['3.','Rec. range','0.000A ~ 2.000A',false],
+      ['4.','Scan speed','Medium',false],
+      ['5.','Scan pitch','1.0nm',false],
+      ['6.','No. of scans','1',false],
+      ['7.','Display mode','Overlay',false],
+      ['8.','Auto-Print','ON',false]
+    ];
+  } else {
+    header='Photometric';
+    const wlSpan = editing ? `<span class="blink">${UI.wlBuffer||'___'}</span>` : (OBS.selectedWavelength!=null?OBS.selectedWavelength:'---');
+    enterReady = editing && UI.wlBuffer.length>=1;
+    rows = [
+      ['1.','Meas. mode','Abs',false],
+      ['2.','Wavelength', wlSpan+' nm', true],
+      ['3.','Rec. range','0.000A ~ 2.000A',false],
+      ['4.','Cuvette','1 cm Quartz',false],
+      ['5.','No. of reads','1',false],
+      ['6.','Auto-Print','ON',false]
+    ];
+  }
+  /* The one editable row carries its own blinking "Press 2" prompt before
+     editing starts, which switches to "Press ENTER" once a value has been
+     typed in — mirroring the fill-cuvette / open-lid / close-lid pattern. */
+  const rowsHTML = rows.map(r=>{
+    const clickable=r[3];
+    const active = clickable && editing;
+    let trailing = r[2];
+    if(clickable){
+      if(!editing) trailing += ' <span class="press-badge">Press 2</span>';
+      else if(enterReady) trailing += ' <span class="press-badge">Press ENTER</span>';
+    }
+    return `<div class="row param-row${clickable?' editable':''}${active?' active-row':''}" ${clickable?'onclick="App.toggleParamEdit()"':''}>
+      <span class="k">${r[0]} ${r[1]}</span><span>${trailing}</span></div>`;
+  }).join('');
+  const footer = editing ? 'Type the value on the keypad, then press ENTER.' : 'Click the row above, or press 2 on the keypad.';
+  return `<div class="hdr">${header}</div>${rowsHTML}<div class="row" style="margin-top:4px;font-size:9px;opacity:.6;">${footer} &nbsp;(START: Measure)</div>`;
+}
+function toggleParamEdit(){
+  UI.paramEditing = !UI.paramEditing;
+  if(UI.paramEditing){
+    UI.editField='low'; UI.wlBuffer=''; UI.lowBuffer=''; UI.highBuffer='';
+  }
+  render();
+}
+function editRangeAgain(){ UI.paramEditing=true; UI.editField='low'; UI.lowBuffer=''; UI.highBuffer=''; render(); }
+
+/* ---- Blank preparation & baseline correction helpers (merged into renderSetup above) ---- */
+function selectCuvetteType(t){ OBS.cuvetteType=t; if(t==='glass') showToast('Glass cuvette selected — not recommended for UV measurements.','warn'); render(); }
+function dropBlank(){
+  if(!OBS.cuvetteType){ showToast('Select a cuvette type first.','warn'); return; }
+  if(OBS.blankFillCount>=2) return;
+  OBS.blankFillCount += 1;
+  showToast('Cuvette '+OBS.blankFillCount+' filled with blank solution.','good');
+  if(OBS.blankFillCount>=2){ OBS.blankFilled=true; showToast('Both cuvettes filled with blank solution.','good'); }
+  render();
+}
+function openBlankLid(){
+  if(OBS.blankLidOpen||OBS.blankLidClosed) return;
+  if(!OBS.blankFilled){ showToast('Fill both cuvettes with blank solution first.','warn'); return; }
+  OBS.blankLidOpen=true; showToast('Sample compartment lid opened.'); render();
+}
+function insertBlank(){
+  if(!OBS.blankLidOpen){ showToast('Open the sample compartment lid first.','warn'); return; }
+  if(!OBS.blankFilled) return;
+  OBS.blankInserted=true; showToast('Both cuvettes placed into the sample holder.'); render();
+}
+function closeBlankLid(){ if(!OBS.blankInserted) return; OBS.blankLidClosed=true; OBS.blankLidOpen=false; showToast('Sample compartment lid closed.'); render(); }
+function autoZero(){
+  if(!OBS.blankLidClosed){ showWarning('Blank required','Baseline correction is only possible after both blank cuvettes are loaded and the lid is closed.'); return; }
+  OBS.baselineDone=true;
+  showToast('Auto Zero complete — baseline set to 0.000.','good');
+  render();
+  setTimeout(()=>{ if(STAGES[UI.stage] && STAGES[UI.stage].id==='setup' && isStageComplete(UI.stage)) nextStage(); }, 900);
+}
+/* Spectrum-mode baseline correction (F1): sweeps the blank across the scan range,
+   high wavelength to low, exactly like the real sample scan — but since both
+   cuvette positions hold the blank, the trace is a flat line near zero absorbance. */
+function generateFlatBaseline(){
+  const lo=Math.min(OBS.scanStart,OBS.scanEnd), hi=Math.max(OBS.scanStart,OBS.scanEnd);
+  const pts=[];
+  for(let wl=hi; wl>=lo; wl-=2){ pts.push({wl, a: Math.max(0, (Math.random()-0.5)*0.006 + 0.003)}); }
+  return pts;
+}
+function startBaselineScan(){
+  if(!OBS.blankLidClosed){ showWarning('Blank required','Baseline correction is only possible after both blank cuvettes are loaded and the lid is closed.'); return; }
+  if(UI.baselineScanning) return;
+  UI.baselineFullData = generateFlatBaseline();
+  UI.baselineScanning = true; UI.currentBaselineWL = OBS.scanStart;
+  render();
+  const step=2;
+  const timer=setInterval(()=>{
+    UI.currentBaselineWL -= step;
+    if(UI.currentBaselineWL<=OBS.scanEnd){ UI.currentBaselineWL=OBS.scanEnd; clearInterval(timer); finishBaselineScan(); return; }
+    render();
+  },70);
+}
+function finishBaselineScan(){
+  UI.baselineScanning=false;
+  OBS.baselineDone=true;
+  showToast('Baseline correction complete — flat reference line recorded (A ≈ 0.000).','good');
+  render();
+  setTimeout(()=>{ if(STAGES[UI.stage] && STAGES[UI.stage].id==='setup' && isStageComplete(UI.stage)) nextStage(); }, 900);
+}
+function drawBaselineCanvas(canvasId){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas) return;
+  if(OBS.scanStart==null||OBS.scanEnd==null) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const marginL=32, marginB=18, marginT=7, marginR=8;
+  const plotW=W-marginL-marginR, plotH=H-marginT-marginB;
+  const xMin=Math.min(OBS.scanStart,OBS.scanEnd), xMax=Math.max(OBS.scanStart,OBS.scanEnd);
+  const data = UI.baselineFullData||[];
+  const visible = data.filter(p=>p.wl>=UI.currentBaselineWL);
+  const yMax = 0.5;
+  ctx.strokeStyle='#6b7a63'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(marginL,marginT); ctx.lineTo(marginL,H-marginB); ctx.lineTo(W-marginR,H-marginB); ctx.stroke();
+  ctx.fillStyle='#3a3a2e'; ctx.font='8px sans-serif'; ctx.textAlign='center';
+  const step = (xMax-xMin)>200?50:20;
+  for(let wl=Math.ceil(xMin/step)*step; wl<=xMax; wl+=step){
+    const x=marginL+((wl-xMin)/(xMax-xMin))*plotW;
+    ctx.fillText(wl,x,H-marginB+10);
+    ctx.strokeStyle='#cfd3bd'; ctx.beginPath(); ctx.moveTo(x,marginT); ctx.lineTo(x,H-marginB); ctx.stroke();
+  }
+  if(visible.length>1){
+    ctx.strokeStyle='#0d6e5a'; ctx.lineWidth=1.6; ctx.beginPath();
+    visible.slice().sort((a,b)=>a.wl-b.wl).forEach((p,i)=>{
+      const x=marginL+((p.wl-xMin)/(xMax-xMin))*plotW;
+      const y=H-marginB-(p.a/yMax)*plotH;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  }
+  const x=marginL+((UI.currentBaselineWL-xMin)/(xMax-xMin))*plotW;
+  ctx.strokeStyle='#f2a30f'; ctx.lineWidth=1.2; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(x,marginT); ctx.lineTo(x,H-marginB); ctx.stroke(); ctx.setLineDash([]);
+}
+
+/* ---- STAGE 5: SAMPLE LOADING & MEASUREMENT (merged) ---- */
+function sampleLidPanelHTML(sampleLidReady){
+  /* Mirrors the blank-fill flow: fill the cuvette with the dropper first, then
+     open the lid, then place it in the holder, then close the lid. Cuvette 2
+     (the blank reference) stays in the back position throughout. */
+  if(!OBS.sampleFilled){
+    /* Dropper sits directly over the cuvette while it is being filled. */
+    return `<div class="fill-tray">
+        <div class="fill-col">
+          ${dropperIconHTML()}
+          <div class="cuvette-slot"><div class="cuvette empty ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 1</div></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-blink" style="white-space:nowrap;" onclick="App.dropSample()">Add Sample to Cuvette 1</button>`;
+  }
+  if(!sampleLidReady){
+    return `<div class="fill-tray">
+        <div class="fill-col"><div class="cuvette-slot"><div class="cuvette sample ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 1</div></div></div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-blink" style="white-space:nowrap;" onclick="App.openSampleLid()">🔓 Open Lid</button>`;
+  }
+  if(OBS.sampleLidClosed){
+    /* Lid closed: cuvettes are inside the compartment, under the lid — not visible. */
+    return `<div class="lid-hinge-label">SAMPLE<br>COMPARTMENT<br>LID</div><div class="lid-label" style="color:#4ee08a;">LID: CLOSED</div>`;
+  }
+  if(!OBS.sampleInserted){
+    return `<div class="sample-holder dual">
+        <div class="cuvette-slot back"><div class="cuvette blank ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 2 — Back (Blank ref.)</div></div>
+        <div class="cuvette-slot front"><div class="cuvette empty"></div><div class="slot-label">Front</div></div>
+      </div><div class="lid-label">LID: OPEN</div>
+      <button class="btn btn-primary btn-sm btn-blink" style="margin-top:6px;white-space:nowrap;" onclick="App.insertSample()">Place Cuvette in Holder</button>`;
+  }
+  return `<div class="sample-holder dual">
+      <div class="cuvette-slot back"><div class="cuvette blank ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 2 — Back (Blank ref.)</div></div>
+      <div class="cuvette-slot front"><div class="cuvette sample ${OBS.cuvetteType==='glass'?'glass':''}"></div><div class="slot-label">Cuvette 1 — Front (Sample)</div></div>
+    </div><div class="lid-label">LID: OPEN</div>
+    <button class="btn btn-primary btn-sm btn-blink" style="margin-top:6px;white-space:nowrap;" onclick="App.closeSampleLid()">Close Lid</button>`;
+}
+function renderSampleMeasure(){
+  const d = DRUGS[OBS.drugKey];
+  const loaded = OBS.sampleInserted && OBS.sampleLidClosed;
+  let screenHTML;
+  if(OBS.mode==='photometric'){
+    screenHTML = `<div class="row"><span class="k">MODE</span><span>PHOTOMETRIC</span></div>
+      <div class="row"><span class="k">WAVELENGTH</span><span>${OBS.selectedWavelength} nm</span></div>
+      <div class="row"><span class="k">SAMPLE</span><span>${loaded? d.name.toUpperCase() : '---'}</span></div>
+      <div class="row"><span class="k">BLANK</span><span>CORRECTED</span></div>
+      <div class="row"><span class="k">ABSORBANCE</span><span>${OBS.absorbance!=null?fmt(OBS.absorbance,3):'-----'}</span></div>
+      <div class="row"><span class="k">TRANSMITTANCE</span><span>${OBS.transmittancePct!=null?fmt(OBS.transmittancePct,1)+' %':'-----'}</span></div>
+      <div class="row"><span class="k">STATUS</span><span>${OBS.measurementDone?'DONE':(loaded?'READY':'LOAD SAMPLE')}</span></div>`;
+  } else {
+    const statusTxt = UI.scanning?'MEASURING…':(OBS.scanDone?'SCAN COMPLETE':(loaded?'READY TO SCAN':'LOAD SAMPLE'));
+    screenHTML = `<div class="hdr">Spectrum — ${d.name.toUpperCase()}</div>
+      <div class="row" style="font-size:9.5px;opacity:.8;"><span>${OBS.scanEnd}–${OBS.scanStart} nm</span><span>${statusTxt}</span></div>
+      ${UI.scanning? `<div class="scan-ticker">${OBS.scanStart} nm <span class="scan-arrow">↓</span> ${UI.currentScanWL} nm <span class="scan-arrow">↓</span> ${OBS.scanEnd} nm</div>`:''}
+      <canvas id="spectrumCanvasIn" width="440" height="150" style="width:100%;height:130px;background:#dfe3cf;border-radius:4px;margin-top:4px;display:block;"></canvas>`;
+  }
+  const sampleLidReady = OBS.sampleLidOpen || OBS.sampleLidClosed;
+  const lidHTML = sampleLidPanelHTML(sampleLidReady);
+  const readyToStart = loaded && !UI.scanning &&
+    ((OBS.mode==='photometric' && !OBS.measurementDone) || (OBS.mode==='spectrum' && !OBS.scanDone));
+  let html = stageHeader('🧫📏','Sample Loading &amp; Measurement','Fill and load the sample — just like the blank — then press the green START/MEASURE button, all on this page.') +
+    renderInstrumentFrame(screenHTML,{maxWidth:620, lidHTML, blinkKeys: readyToStart?['start']:[]});
+  if(!OBS.sampleFilled){
+    html += `<div class="calc-step"><h4>🧫 Fill the Sample Cuvette</h4>
+      <p style="font-size:11.8px;color:var(--muted);margin:0 0 6px;">Use the dropper on the compartment above to fill a clean cuvette with the <b>${d.name}</b> solution.</p>
+      <label style="font-size:12.3px;display:block;margin-bottom:4px;"><input type="checkbox" onchange="App.toggleDirty(this.checked)"> Simulate a dirty/fingerprinted cuvette</label>
+      <label style="font-size:12.3px;display:block;"><input type="checkbox" onchange="App.toggleBubble(this.checked)"> Simulate an air bubble in the light path</label></div>`;
+  } else if(!sampleLidReady){
+    html += '<div class="info-note">✓ Cuvette filled. Now press <b>🔓 Open Lid</b> on the compartment above to access the sample holder.</div>';
+  } else if(!OBS.sampleInserted){
+    html += '<div class="info-note">Press <b>Place Cuvette in Holder</b> on the compartment above — cuvette 2 stays in place as the blank reference.</div>';
+  } else if(!OBS.sampleLidClosed){
+    html += '<div class="info-note">Press <b>Close Lid</b> on the compartment above.</div>';
+  } else if(OBS.mode==='photometric' && !OBS.measurementDone){
+    html += '<div class="info-note">Sample loaded. Press the green <b>START / MEASURE</b> button on the instrument panel above.</div>';
+  } else if(OBS.mode==='spectrum' && !OBS.scanDone){
+    html += '<div class="info-note">Sample loaded. Press the green <b>START / MEASURE</b> button — the instrument sweeps from the higher wavelength toward the lower wavelength ('+OBS.scanStart+' → '+OBS.scanEnd+' nm).</div>';
+  } else if(OBS.mode==='photometric'){
+    html += '<div id="measureMsgs"></div><div class="good-note">✓ Absorbance recorded: A = '+fmt(OBS.absorbance,3)+'. Proceed to view the result.</div>';
+  } else {
+    html += '<div class="good-note">✓ Spectrum acquired. Proceed to identify λmax.</div>';
+  }
+  return html;
+}
+function dropSample(){
+  if(OBS.sampleFilled) return;
+  OBS.sampleFilled=true;
+  showToast('Cuvette filled with '+(DRUGS[OBS.drugKey]?DRUGS[OBS.drugKey].name:'sample')+' solution.','good');
+  render();
+}
+function openSampleLid(){
+  if(OBS.sampleLidOpen||OBS.sampleLidClosed) return;
+  if(!OBS.sampleFilled){ showToast('Fill the sample cuvette first.','warn'); return; }
+  OBS.sampleLidOpen=true; showToast('Sample compartment lid opened.'); render();
+}
+function insertSample(){
+  if(!OBS.sampleLidOpen){ showToast('Open the sample compartment lid first.','warn'); return; }
+  if(!OBS.sampleFilled) return;
+  OBS.sampleInserted=true; showToast('Sample cuvette placed in the holder (front position).'); render();
+}
+function closeSampleLid(){ if(!OBS.sampleInserted) return; OBS.sampleLidClosed=true; OBS.sampleLidOpen=false; showToast('Sample compartment lid closed.'); render(); }
+function toggleDirty(v){ OBS.dirtyCuvette=v; if(v) showToast('⚠️ Fingerprints on optical faces can affect the measurement.','warn'); }
+function toggleBubble(v){ OBS.bubble=v; if(v) showToast('⚠️ Air bubbles may scatter light and introduce measurement error.','warn'); }
+
+function measurePhotometric(){
+  if(!OBS.baselineDone){ showWarning('Baseline required','Perform blank/baseline correction before measuring the sample.'); return; }
+  if(!OBS.sampleLidClosed){ showWarning('Close the lid','Close the sample compartment lid before measurement.'); return; }
+  const a = computeAbsorbanceAt(OBS.selectedWavelength);
+  OBS.absorbance = Math.round(a*1000)/1000;
+  OBS.transmittancePct = 100*Math.pow(10,-OBS.absorbance);
+  OBS.measurementDone = true; OBS.recorded=false;
+  const notes=[];
+  if(OBS.dirtyCuvette) notes.push('Fingerprints/dirt on the optical surface can affect absorbance.');
+  if(OBS.bubble) notes.push('Air bubbles in the optical path can produce erroneous readings.');
+  if(OBS.cuvetteType==='glass' && OBS.selectedWavelength<340) notes.push('A glass cuvette strongly absorbs UV light — this reading is unreliable. Use quartz.');
+  if(OBS.wavelengthTier===3) notes.push('The selected wavelength is far from λmax — sensitivity is greatly reduced.');
+  showToast('Absorbance measured: A = '+fmt(OBS.absorbance,3),'good');
+  render();
+  const box=document.getElementById('measureMsgs');
+  if(box) box.innerHTML = notes.map(m=>'<div class="warn-note">⚠ '+m+'</div>').join('');
+}
+function startScan(){
+  if(!OBS.baselineDone){ showWarning('Baseline required','Perform blank/baseline correction before scanning the sample.'); return; }
+  if(!OBS.sampleLidClosed){ showWarning('Close the lid','Close the sample compartment lid before scanning.'); return; }
+  if(UI.scanning) return;
+  UI.fullSpectrumData = generateFullSpectrum();
+  UI.scanning=true; UI.currentScanWL=OBS.scanStart; OBS.scanDone=false; OBS.recorded=false;
+  render();
+  const step=2;
+  const timer=setInterval(()=>{
+    UI.currentScanWL -= step;
+    if(UI.currentScanWL<=OBS.scanEnd){ UI.currentScanWL=OBS.scanEnd; clearInterval(timer); finishScan(); return; }
+    render();
+  },140);
+}
+function finishScan(){
+  UI.scanning=false;
+  let best=UI.fullSpectrumData[0];
+  UI.fullSpectrumData.forEach(p=>{ if(p.a>best.a) best=p; });
+  OBS.observedLambdaMax = best.wl;
+  OBS.peakAbsorbance = Math.round(best.a*1000)/1000;
+  OBS.scanDone = true;
+  showToast('Spectrum scan complete. Peak identified at '+OBS.observedLambdaMax+' nm.','good');
+  render();
+}
+function drawSpectrumCanvas(canvasId, compact){
+  const canvas=document.getElementById(canvasId||'spectrumCanvas');
+  if(!canvas) return;
+  if(OBS.scanStart==null||OBS.scanEnd==null) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const marginL=compact?32:50, marginB=compact?18:32, marginT=compact?7:14, marginR=compact?8:14;
+  const plotW=W-marginL-marginR, plotH=H-marginT-marginB;
+  const xMin=Math.min(OBS.scanStart,OBS.scanEnd), xMax=Math.max(OBS.scanStart,OBS.scanEnd);
+  const hasData = !!UI.fullSpectrumData;
+  const visible = !hasData ? [] : (UI.scanning ? UI.fullSpectrumData.filter(p=>p.wl>=UI.currentScanWL) : (OBS.scanDone ? UI.fullSpectrumData : []));
+  const yMax = hasData ? Math.max(0.1, ...UI.fullSpectrumData.map(p=>p.a))*1.25 : 2.0;
+  const fontSz = compact?'8px sans-serif':'11px sans-serif';
+  ctx.strokeStyle=compact?'#6b7a63':'#8fa5ad'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(marginL,marginT); ctx.lineTo(marginL,H-marginB); ctx.lineTo(W-marginR,H-marginB); ctx.stroke();
+  ctx.fillStyle=compact?'#3a3a2e':'#5b6b74'; ctx.font=fontSz; ctx.textAlign='center';
+  const step = (xMax-xMin)>200?(compact?50:25):20;
+  for(let wl=Math.ceil(xMin/step)*step; wl<=xMax; wl+=step){
+    const x=marginL+((wl-xMin)/(xMax-xMin))*plotW;
+    if(!compact) ctx.fillText(wl,x,H-marginB+14); else ctx.fillText(wl,x,H-marginB+10);
+    ctx.strokeStyle=compact?'#cfd3bd':'#eef3f6'; ctx.beginPath(); ctx.moveTo(x,marginT); ctx.lineTo(x,H-marginB); ctx.stroke();
+  }
+  if(!compact){
+    ctx.fillText('Wavelength (nm)', marginL+plotW/2, H-4);
+    ctx.save(); ctx.translate(14,marginT+plotH/2); ctx.rotate(-Math.PI/2); ctx.fillText('Absorbance',0,0); ctx.restore();
+  }
+  for(let i=0;i<=(compact?2:4);i++){
+    const denom = compact?2:4;
+    const val=yMax*i/denom; const y=H-marginB-(val/yMax)*plotH;
+    ctx.fillStyle=compact?'#3a3a2e':'#5b6b74'; ctx.textAlign='right'; ctx.fillText(fmt(val,compact?1:2),marginL-4,y+3);
+    ctx.strokeStyle=compact?'#e2e5d1':'#f2f6f7'; ctx.beginPath(); ctx.moveTo(marginL,y); ctx.lineTo(W-marginR,y); ctx.stroke();
+  }
+  if(visible.length>1){
+    ctx.strokeStyle=compact?'#0d6e5a':'#0d6e8c'; ctx.lineWidth=compact?1.6:2.2; ctx.beginPath();
+    visible.slice().sort((a,b)=>a.wl-b.wl).forEach((p,i)=>{
+      const x=marginL+((p.wl-xMin)/(xMax-xMin))*plotW;
+      const y=H-marginB-(p.a/yMax)*plotH;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  }
+  if(UI.scanning){
+    const x=marginL+((UI.currentScanWL-xMin)/(xMax-xMin))*plotW;
+    ctx.strokeStyle='#f2a30f'; ctx.lineWidth=1.4; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(x,marginT); ctx.lineTo(x,H-marginB); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if(!UI.scanning && OBS.scanDone && OBS.observedLambdaMax!=null){
+    const xPeak=marginL+((OBS.observedLambdaMax-xMin)/(xMax-xMin))*plotW;
+    const yPeak=H-marginB-(OBS.peakAbsorbance/yMax)*plotH;
+    ctx.strokeStyle='#c62828'; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(xPeak,marginT); ctx.lineTo(xPeak,H-marginB); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#c62828'; ctx.beginPath(); ctx.arc(xPeak,yPeak,compact?2.5:4,0,7); ctx.fill();
+    if(!compact){
+      ctx.fillStyle='#c62828'; ctx.textAlign='center'; ctx.font='bold 11px sans-serif';
+      ctx.fillText('λmax ≈ '+OBS.observedLambdaMax+' nm', xPeak, yPeak-10);
+    }
+  }
+  if(!compact){
+    canvas.onmousemove = function(ev){
+      if(UI.scanning||!OBS.scanDone) return;
+      const rect=canvas.getBoundingClientRect();
+      const scaleX=canvas.width/rect.width;
+      const mx=(ev.clientX-rect.left)*scaleX;
+      const wl=Math.round(xMin + ((mx-marginL)/plotW)*(xMax-xMin));
+      if(wl<xMin||wl>xMax) return;
+      const pt = UI.fullSpectrumData.reduce((best,p)=>Math.abs(p.wl-wl)<Math.abs(best.wl-wl)?p:best, UI.fullSpectrumData[0]);
+      const readout=document.getElementById('hoverReadout');
+      if(readout) readout.textContent = 'Wavelength: '+pt.wl+' nm   |   Absorbance: '+fmt(pt.a,3);
+    };
+  }
+}
+
+/* ---- STAGE 6: SPECTRUM & λmax / RESULT ---- */
+function renderSpectrumStage(){
+  const d=DRUGS[OBS.drugKey];
+  if(OBS.mode==='spectrum'){
+    const diff = OBS.observedLambdaMax - d.lambdaMax;
+    const rows = [
+      ['Drug', d.name],
+      ['Reference λmax', d.lambdaMax+' nm'],
+      ['Scan range', OBS.scanEnd+' – '+OBS.scanStart+' nm'],
+      ['Baseline', 'Corrected'],
+      ['Observed λmax', OBS.observedLambdaMax+' nm'],
+      ['Peak absorbance', fmt(OBS.peakAbsorbance,3)]
+    ];
+    return stageHeader('📈','Spectrum &amp; λmax Identification','Examine the acquired spectrum and identify the wavelength of maximum absorbance.') + `
+    <canvas id="spectrumCanvas" class="spectrum-canvas" width="900" height="260"></canvas>
+    <div class="hover-readout" id="hoverReadout">Move the cursor over the graph to read absorbance at any wavelength.</div>
+    <div class="field-row" style="margin-top:14px;">
+      <div class="calc-step" style="flex:1;min-width:200px;"><h4>Observed λmax</h4><div style="font-size:22px;font-weight:800;color:var(--primary-dark);">${OBS.observedLambdaMax} nm</div></div>
+      <div class="calc-step" style="flex:1;min-width:200px;"><h4>Reference λmax</h4><div style="font-size:22px;font-weight:800;color:var(--muted);">${d.lambdaMax} nm</div></div>
+      <div class="calc-step" style="flex:1;min-width:200px;"><h4>Difference</h4><div style="font-size:22px;font-weight:800;color:${Math.abs(diff)<=3?'var(--good)':'var(--warn)'};">${diff>0?'+':''}${diff} nm</div></div>
+    </div>
+    <div class="info-note">Maximum absorbance observed at approximately ${OBS.observedLambdaMax} nm. Small differences between observed and reference λmax (±1–3 nm) are normal experimental variation.</div>
+    <h4 style="margin-top:16px;">Observation Table</h4>
+    <table class="obs-table">${rows.map(r=>`<tr><td>${r[0]}</td><td class="val">${r[1]}</td></tr>`).join('')}</table>
+    <button class="btn btn-primary" style="margin-top:14px;" onclick="App.recordObservation()" ${OBS.recorded?'disabled':''}>${OBS.recorded?'✓ Observation Recorded':'Record Observation'}</button>`;
+  }
+  const rows = [
+    ['Drug', d.name],
+    ['Reference λmax', d.lambdaMax+' nm'],
+    ['Selected wavelength', OBS.selectedWavelength+' nm'],
+    ['Blank', 'Corrected'],
+    ['Absorbance', fmt(OBS.absorbance,3)],
+    ['% Transmittance', fmt(OBS.transmittancePct,2)]
+  ];
+  const tier = OBS.wavelengthTier;
+  return stageHeader('📊','Photometric Result','Review the recorded absorbance and its relationship to λmax.') + `
+  <div class="field-row">
+    <div class="calc-step" style="flex:1;min-width:200px;"><h4>Absorbance</h4><div style="font-size:26px;font-weight:800;color:var(--primary-dark);">${fmt(OBS.absorbance,3)}</div></div>
+    <div class="calc-step" style="flex:1;min-width:200px;"><h4>% Transmittance</h4><div style="font-size:26px;font-weight:800;color:var(--muted);">${fmt(OBS.transmittancePct,2)} %</div></div>
+  </div>
+  ${tierNoteHTML(tier)}
+  <h4 style="margin-top:16px;">Observation Table</h4>
+  <table class="obs-table">${rows.map(r=>`<tr><td>${r[0]}</td><td class="val">${r[1]}</td></tr>`).join('')}</table>
+  <button class="btn btn-primary" style="margin-top:14px;" onclick="App.recordObservation()" ${OBS.recorded?'disabled':''}>${OBS.recorded?'✓ Observation Recorded':'Record Observation'}</button>`;
+}
+function tierNoteHTML(tier){
+  if(tier==null) return '';
+  const t=tierNote(tier);
+  return `<div class="${t.cls}">${t.text}</div>`;
+}
+function recordObservation(){ OBS.recorded=true; showToast('Observation recorded.','good'); render(); }
+
+/* ---- STAGE 7: FINAL OBSERVATION ---- */
+function renderResult(){
+  const d=DRUGS[OBS.drugKey];
+  return stageHeader('🏁','Final Observation','UV-Visible spectrophotometer operation completed.') + `
+  <div class="good-note" style="font-size:15px;font-weight:700;text-align:center;padding:14px;">✓ UV-Visible Spectrophotometer Operation Completed</div>
+  <table class="obs-table" style="margin-top:14px;">
+    <tr><td>Student</td><td class="val">${OBS.studentName||'—'}</td></tr>
+    <tr><td>Mode</td><td class="val">${OBS.mode==='photometric'?'Photometric':'Spectrum'}</td></tr>
+    <tr><td>Drug</td><td class="val">${d.name}</td></tr>
+    ${OBS.mode==='photometric'? `<tr><td>Wavelength</td><td class="val">${OBS.selectedWavelength} nm</td></tr>
+      <tr><td>Absorbance</td><td class="val">${fmt(OBS.absorbance,3)}</td></tr>
+      <tr><td>% Transmittance</td><td class="val">${fmt(OBS.transmittancePct,2)}</td></tr>` :
+      `<tr><td>Scan range</td><td class="val">${OBS.scanEnd} – ${OBS.scanStart} nm</td></tr>
+      <tr><td>Observed λmax</td><td class="val">${OBS.observedLambdaMax} nm</td></tr>
+      <tr><td>Peak absorbance</td><td class="val">${fmt(OBS.peakAbsorbance,3)}</td></tr>`}
+    <tr><td>Blank correction</td><td class="val">Complete</td></tr>
+    <tr><td>Measurement status</td><td class="val">Complete</td></tr>
+  </table>
+  <div class="field-row" style="margin-top:16px;">
+    <button class="btn btn-outline" onclick="App.generateReport()">🖨️ Print / Save Observation</button>
+    <button class="btn btn-secondary" onclick="App.confirmReset()">🔄 Start New Simulation</button>
+  </div>
+  <div id="quizArea" style="margin-top:20px;">${renderQuizHTML()}</div>`;
+}
+
+/* ---------------------------------------------------------------
+   10. QUIZ
+--------------------------------------------------------------- */
+const QUIZ = [
+  {q:'Why is blank correction performed?', opts:['To calibrate the balance','To cancel the background absorbance of the solvent/matrix','To clean the cuvette','It is not required'], correct:1},
+  {q:'Which cuvette type is preferred for UV-region measurements?', opts:['Ordinary glass','Plastic','Quartz','Coloured glass'], correct:2},
+  {q:'What does λmax mean?', opts:['The lowest wavelength the instrument can read','The wavelength of maximum absorbance for a substance','The wavelength at which absorbance is always zero','The visible-light cutoff wavelength'], correct:1},
+  {q:'Why should the selected wavelength be close to λmax for a photometric assay?', opts:['It looks better on the display','It gives maximum sensitivity and the smallest error','It uses less power','It is required by law'], correct:1},
+  {q:'In this simulation, in which direction is the spectrum scanned?', opts:['From lower wavelength to higher wavelength','From higher wavelength to lower wavelength','Randomly','It does not matter'], correct:1}
+];
+function renderQuizHTML(){
+  let h='<h3>📝 Quick Quiz</h3>';
+  QUIZ.forEach((item,qi)=>{
+    const ans=UI.quizAnswers[qi];
+    h+=`<div class="quiz-q"><h5>${qi+1}. ${item.q}</h5>`;
+    item.opts.forEach((opt,oi)=>{
+      let cls='quiz-opt';
+      if(UI.quizSubmitted){
+        if(oi===item.correct) cls+=' correct';
+        else if(ans===oi) cls+=' incorrect';
+      } else if(ans===oi) cls+=' selected';
+      h+=`<button class="${cls}" onclick="App.selectQuizAnswer(${qi},${oi})" ${UI.quizSubmitted?'disabled':''}>${opt}</button>`;
+    });
+    h+='</div>';
+  });
+  h += UI.quizSubmitted
+    ? `<div class="good-note">You scored ${quizScore()} / ${QUIZ.length}.</div>`
+    : `<button class="btn btn-accent" onclick="App.submitQuiz()">Submit Quiz</button>`;
+  return h;
+}
+function selectQuizAnswer(qi,oi){ if(UI.quizSubmitted) return; UI.quizAnswers[qi]=oi; render(); }
+function quizScore(){ return QUIZ.reduce((s,item,qi)=>s+(UI.quizAnswers[qi]===item.correct?1:0),0); }
+function submitQuiz(){ UI.quizSubmitted=true; showToast('Quiz submitted — score '+quizScore()+'/'+QUIZ.length,'good'); render(); }
+
+/* ---------------------------------------------------------------
+   11. REPORT / PRINT
+--------------------------------------------------------------- */
+function buildReportHTML(){
+  const d=DRUGS[OBS.drugKey];
+  let body = `<h2 style="margin-bottom:2px;">UV-Visible Spectrophotometer — Observation Report</h2>
+  <p style="color:#555;margin-top:0;">Date: ${OBS.expDate} &nbsp;|&nbsp; Student: ${OBS.studentName||'—'}</p>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">Mode</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${OBS.mode==='photometric'?'Photometric':'Spectrum'}</td></tr>
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">Drug / Analyte</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${d.name}</td></tr>
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">Reference λmax</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${d.lambdaMax} nm</td></tr>`;
+  if(OBS.mode==='photometric'){
+    body += `<tr><td style="padding:5px;border-bottom:1px solid #ccc;">Selected wavelength</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${OBS.selectedWavelength} nm</td></tr>
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">Absorbance</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${fmt(OBS.absorbance,3)}</td></tr>
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">% Transmittance</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${fmt(OBS.transmittancePct,2)}</td></tr>`;
+  } else {
+    body += `<tr><td style="padding:5px;border-bottom:1px solid #ccc;">Scan range</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${OBS.scanEnd} – ${OBS.scanStart} nm</td></tr>
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">Observed λmax</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${OBS.observedLambdaMax} nm</td></tr>
+    <tr><td style="padding:5px;border-bottom:1px solid #ccc;">Peak absorbance</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">${fmt(OBS.peakAbsorbance,3)}</td></tr>`;
+  }
+  body += `<tr><td style="padding:5px;border-bottom:1px solid #ccc;">Blank / Baseline</td><td style="padding:5px;border-bottom:1px solid #ccc;text-align:right;">Corrected</td></tr>
+  <tr><td style="padding:5px;">Measurement status</td><td style="padding:5px;text-align:right;">Complete</td></tr>
+  </table>`;
+  if(UI.quizSubmitted) body += `<p style="margin-top:14px;">Quiz score: ${quizScore()} / ${QUIZ.length}</p>`;
+  return body;
+}
+function generateReport(){
+  document.getElementById('printReportArea').innerHTML = buildReportHTML();
+  window.print();
+}
+
+/* ---------------------------------------------------------------
+   12. INSTRUCTOR PANEL
+--------------------------------------------------------------- */
+function openInstructorPanel(){
+  if(UI.mode!=='instructor'){ toggleModePrompt(); return; }
+  UI.showInstructorPanel = !UI.showInstructorPanel;
+  render();
+}
+function renderInstructorPanelHTML(){
+  if(UI.mode!=='instructor' || !UI.showInstructorPanel) return '';
+  const drugRows = Object.keys(DRUGS).map(k=>{
+    const d=DRUGS[k];
+    return `<div class="drug-edit-row">
+      <input type="text" value="${d.name}" onchange="App.editDrug('${k}','name',this.value)">
+      <input type="number" value="${d.lambdaMax}" onchange="App.editDrug('${k}','lambdaMax',this.value)" title="λmax">
+      <input type="number" value="${d.tolLo}" onchange="App.editDrug('${k}','tolLo',this.value)" title="Tol low">
+      <input type="number" value="${d.tolHi}" onchange="App.editDrug('${k}','tolHi',this.value)" title="Tol high">
+      <input type="number" value="${d.scanHi}" onchange="App.editDrug('${k}','scanHi',this.value)" title="Scan high">
+      <label style="font-size:11px;"><input type="checkbox" ${d.enabled?'checked':''} onchange="App.toggleDrugEnabled('${k}',this.checked)"> On</label>
+    </div>`;
+  }).join('');
+  return `<div class="instr-panel">
+    <h4>⚙️ Instructor Configuration <span style="font-weight:400;font-size:11px;color:var(--muted);">(educational lock only — not real security)</span></h4>
+    <div class="field-row">
+      <div class="field"><label>Experimental variation</label>
+        <select onchange="App.setCfg('variation',this.value)">
+          <option value="low" ${CFG.variation==='low'?'selected':''}>Low</option>
+          <option value="medium" ${CFG.variation==='medium'?'selected':''}>Medium</option>
+          <option value="high" ${CFG.variation==='high'?'selected':''}>High</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <label style="font-size:12.5px;"><input type="checkbox" ${CFG.blockOnBadWavelength?'checked':''} onchange="App.setCfgBool('blockOnBadWavelength',this.checked)"> Incorrect wavelength/range blocks progression</label>
+    </div>
+    <div class="field-row">
+      <label style="font-size:12.5px;"><input type="checkbox" ${CFG.enforceCuvetteErrors?'checked':''} onchange="App.setCfgBool('enforceCuvetteErrors',this.checked)"> Enforce correct (quartz) cuvette selection</label>
+    </div>
+    <div class="field-row">
+      <label style="font-size:12.5px;"><input type="checkbox" ${CFG.allowRetryMeasurements?'checked':''} onchange="App.setCfgBool('allowRetryMeasurements',this.checked)"> Allow students to retry measurements</label>
+    </div>
+    <h4 style="margin-top:14px;">Drug Database <span style="font-weight:400;font-size:11px;color:var(--muted);">(name / λmax / tol-lo / tol-hi / scan-high / enabled)</span></h4>
+    ${drugRows}
+    <button class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="App.applyInstructorConfig()">Apply &amp; Regenerate Run</button>
+  </div>`;
+}
+function setCfg(key,val){ CFG[key]=isNaN(parseFloat(val))?val:parseFloat(val); }
+function setCfgBool(key,val){ CFG[key]=val; }
+function editDrug(key,field,val){
+  if(!DRUGS[key]) return;
+  DRUGS[key][field] = (field==='name')?val:parseFloat(val);
+}
+function toggleDrugEnabled(key,val){
+  const stillOn = Object.keys(DRUGS).filter(k=>k===key?val:DRUGS[k].enabled);
+  if(stillOn.length===0){ showToast('At least one drug must remain enabled.','warn'); render(); return; }
+  DRUGS[key].enabled=val; render();
+}
+function applyInstructorConfig(){
+  showToast('Instructor configuration applied. Starting a fresh run.','good');
+  resetExperiment();
+}
+
+/* ---------------------------------------------------------------
+   13. PUBLIC API + BOOTSTRAP
+--------------------------------------------------------------- */
+window.App = {
+  goStage, nextStage, prevStage, saveObservation,
+  toggleModePrompt, submitInstructorLogin, openInstructorPanel, setCfg, setCfgBool, editDrug, toggleDrugEnabled, applyInstructorConfig,
+  confirmReset, resetExperiment, closeModal, openPrecautions, whyToggle, setStudentName,
+  powerOn, startInit,
+  selectMode, selectDrug,
+  toggleParamEdit, editRangeAgain,
+  keyPress, keyClear, keyEnter, pressArrow, pressGotoWL, pressAutoZero, pressF, pressPrint, pressStart,
+  selectCuvetteType, dropBlank, openBlankLid, insertBlank, closeBlankLid,
+  autoZero, startBaselineScan,
+  dropSample, openSampleLid, insertSample, closeSampleLid, toggleDirty, toggleBubble,
+  measurePhotometric, startScan,
+  recordObservation,
+  generateReport,
+  selectQuizAnswer, submitQuiz
+};
+
+generateRandomData();
+freshObservations();
+freshUI();
+render();
+
+})();
+</script>
+
+<!-- ===== Pharma Hub integration =====================================
+     Links this simulation to the site's progress tracking so "Mark
+     complete" here shows up on the homepage and library cards.
+     The id must match the entry in resources.js.
+     ================================================================== -->
+<script src="./resources.js"></script>
+<script src="./progress.js"></script>
+<script>
+(function () {
+  var ID = "uv-vis-spectrophotometer";
+  if (typeof Progress === "undefined") return;
+  Progress.markStarted(ID);
+  var btn = document.getElementById("phMarkDone");
+  if (!btn) return;
+  function refresh() {
+    var done = Progress.get(ID) === "completed";
+    btn.textContent = done ? "\u2713 Completed" : "Mark complete";
+    btn.style.background = done ? "rgba(30,138,95,.9)" : "";
+    btn.setAttribute("aria-pressed", done ? "true" : "false");
+  }
+  btn.addEventListener("click", function () {
+    if (Progress.get(ID) === "completed") Progress.markStarted(ID);
+    else Progress.markCompleted(ID);
+    refresh();
+  });
+  refresh();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About</title>
+<link rel="stylesheet" href="./style.css">
+<script>
+  try {
+    var t = localStorage.getItem("edutech.theme");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header id="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="wrap prose">
+      <h1>About this platform</h1>
+
+      <p class="muted" id="about-lede"></p>
+
+      <h2>What you will find here</h2>
+      <ul>
+        <li><strong>Virtual instruments</strong> — operate laboratory instruments in the browser, at your own pace, as many times as you like.</li>
+        <li><strong>Virtual experiments</strong> — work through a complete practical from preparation to final calculation.</li>
+        <li><strong>Notes and presentations</strong> — study material in its original format, to read online or download.</li>
+        <li><strong>Practice</strong> — quizzes and viva questions for examination preparation.</li>
+      </ul>
+
+      <h2>How progress tracking works</h2>
+      <p>
+        Progress is stored in your own browser. There is no account and no server —
+        nothing you do here is sent anywhere. Clearing your browser data resets it,
+        and progress does not follow you to another device.
+      </p>
+
+      <h2>New material</h2>
+      <p>
+        Resources are added continuously. Anything marked <em>Coming Soon</em> is in
+        preparation; it becomes available on this same page as soon as it is published.
+      </p>
+
+      <h2>Contact</h2>
+      <p id="about-contact"></p>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="./site-config.js"></script>
+<script src="./resources.js"></script>
+<script src="./progress.js"></script>
+<script src="./app.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("about-lede").textContent = SITE.description;
+    var c = document.getElementById("about-contact");
+    var a = document.createElement("a");
+    a.href = "mailto:" + SITE.contactEmail;
+    a.textContent = SITE.contactEmail;
+    c.append("Questions, corrections or requests: ", a);
+  });
+</script>
+
+</body>
+</html>

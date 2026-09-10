@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library</title>
+<meta name="description" content="Search and filter every simulation, note, presentation, document, video and quiz on the platform.">
+<link rel="stylesheet" href="./style.css">
+<script>
+  try {
+    var t = localStorage.getItem("edutech.theme");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header id="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="wrap">
+
+      <div class="section-head">
+        <div>
+          <h1 style="font-size:clamp(1.6rem,3.4vw,2.2rem)">Resource library</h1>
+          <p class="muted">Everything on the platform, searchable and filterable.</p>
+        </div>
+        <p class="muted" id="result-count"></p>
+      </div>
+
+      <div class="searchbar">
+        <label class="visually-hidden" for="search" style="position:absolute;left:-9999px">Search resources</label>
+        <input id="search" type="search" autocomplete="off"
+               placeholder="Search by title, subject, category or type — try “UV-Visible”">
+      </div>
+
+      <div class="filters" id="filters"></div>
+
+      <div class="grid" id="resource-grid"></div>
+
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="./site-config.js"></script>
+<script src="./resources.js"></script>
+<script src="./progress.js"></script>
+<script src="./app.js"></script>
+
+</body>
+</html>

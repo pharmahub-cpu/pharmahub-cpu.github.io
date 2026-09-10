@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home</title>
+<meta name="description" content="Interactive pharmacy simulations, notes, presentations and practice questions.">
+<link rel="stylesheet" href="./style.css">
+<script>
+  /* Applied before first paint so the theme never flashes. */
+  try {
+    var t = localStorage.getItem("edutech.theme");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header id="site-header"></header>
+
+<main>
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="kicker" id="hero-kicker">Learn by doing</span>
+      <h1 id="hero-title">Virtual pharmacy laboratory</h1>
+      <p class="lede" id="hero-lede"></p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="./library.html">Browse the library</a>
+        <a class="btn btn-ghost btn-lg" href="./library.html?type=Simulations">Open a simulation</a>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <h2>Featured</h2>
+          <p class="muted">Ready to use right now.</p>
+        </div>
+        <a class="btn btn-ghost" href="./library.html">See all resources</a>
+      </div>
+      <div class="grid" id="featured-grid"></div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap">
+      <div class="panel" id="progress-panel" hidden></div>
+    </div>
+  </section>
+
+  <section class="block" id="soon-section">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <h2>Coming soon</h2>
+          <p class="muted">In preparation — these will appear here as soon as they are published.</p>
+        </div>
+      </div>
+      <div class="grid" id="soon-grid"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="site-footer"></footer>
+
+<script src="./site-config.js"></script>
+<script src="./resources.js"></script>
+<script src="./progress.js"></script>
+<script src="./app.js"></script>
+<script>
+  /* Hero text comes from site-config.js so a rebrand is a one-file change. */
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("hero-kicker").textContent = SITE.heroKicker;
+    document.getElementById("hero-title").textContent = SITE.tagline;
+    document.getElementById("hero-lede").textContent = SITE.description;
+  });
+</script>
+
+</body>
+</html>
