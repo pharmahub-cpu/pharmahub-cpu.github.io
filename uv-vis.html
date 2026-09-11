@@ -276,6 +276,59 @@ footer.footbar{display:flex;justify-content:space-between;align-items:center;pad
   .tbl-scroll, main.workspace > div { max-width: 100%; }
 }
 </style>
+
+<style>
+/* ===== Pharma Hub: guide / SOP overlay ============================== */
+.guide-box{max-width:820px;width:94%;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden;}
+.guide-head{padding:16px 22px 0;border-bottom:1px solid var(--border);}
+.guide-head h3{margin:0 0 3px;font-size:17px;color:var(--primary-dark);}
+.guide-head .guide-sub{font-size:12px;color:var(--muted);margin-bottom:12px;}
+.guide-tabs{display:flex;gap:4px;}
+.guide-tab{border:0;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--muted);
+  padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;border-bottom:3px solid transparent;}
+.guide-tab:hover{color:var(--ink);}
+.guide-tab.on{color:var(--primary-dark);border-bottom-color:var(--primary);background:var(--primary-light);}
+.guide-body{padding:18px 22px;overflow-y:auto;font-size:13.2px;line-height:1.62;color:var(--ink);}
+.guide-body h4{margin:18px 0 6px;font-size:13.5px;color:var(--primary-dark);}
+.guide-body h4:first-child{margin-top:0;}
+.guide-body ol,.guide-body ul{padding-left:20px;margin:6px 0;}
+.guide-body li{margin:3px 0;}
+.guide-body p{margin:6px 0;}
+.guide-body .tip{background:var(--primary-light);border-left:3px solid var(--primary);
+  border-radius:0 8px 8px 0;padding:9px 13px;margin:12px 0;font-size:12.6px;}
+.guide-body .caution{background:#fff8ea;border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:9px 13px;margin:12px 0;font-size:12.6px;color:#7a5300;}
+.guide-body table{width:100%;border-collapse:collapse;font-size:12.4px;margin:10px 0;}
+.guide-body th,.guide-body td{border:1px solid var(--border);padding:6px 9px;text-align:left;vertical-align:top;}
+.guide-body th{background:var(--primary-light);color:var(--primary-dark);font-size:11.8px;
+  text-transform:uppercase;letter-spacing:.04em;}
+.guide-foot{padding:12px 22px;border-top:1px solid var(--border);display:flex;
+  justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fafcfc;}
+.guide-foot .left{font-size:11.8px;color:var(--muted);}
+.guide-foot .right{display:flex;gap:8px;}
+
+@media (max-width:640px){
+  .guide-box{width:96%;max-height:92vh;}
+  .guide-head,.guide-body,.guide-foot{padding-left:14px;padding-right:14px;}
+  .guide-tab{padding:8px 9px;font-size:12px;}
+}
+
+/* Printing: hide the app, print only the SOP sheet. */
+#sopPrintDoc{display:none;}
+@media print{
+  body>*{display:none !important;}
+  #sopPrintDoc{display:block !important;padding:0;font-size:11pt;line-height:1.5;color:#000;}
+  #sopPrintDoc h1{font-size:16pt;margin:0 0 2px;}
+  #sopPrintDoc .meta{font-size:9pt;color:#444;border-bottom:1.5px solid #000;
+    padding-bottom:6px;margin-bottom:12px;}
+  #sopPrintDoc h4{font-size:11.5pt;margin:12px 0 3px;page-break-after:avoid;}
+  #sopPrintDoc li{margin:2px 0;}
+  #sopPrintDoc table{width:100%;border-collapse:collapse;font-size:9.5pt;}
+  #sopPrintDoc th,#sopPrintDoc td{border:1px solid #666;padding:4px 6px;text-align:left;}
+  #sopPrintDoc .tip,#sopPrintDoc .caution{border:1px solid #666;padding:6px 8px;margin:8px 0;}
+  @page{margin:16mm;}
+}
+</style>
 </head>
 <body>
 
@@ -286,6 +339,7 @@ footer.footbar{display:flex;justify-content:space-between;align-items:center;pad
   </div>
   <div class="topbar-right">
     <a class="pill-btn" href="./library.html" style="text-decoration:none">← Library</a>
+    <button class="pill-btn" onclick="App.openGuide()">📘 How to Use / SOP</button>
     <span class="pill-btn" id="modeIndicator">Mode: Student</span>
     <button class="pill-btn" onclick="App.toggleModePrompt()">Switch Mode</button>
     <button class="pill-btn" onclick="App.openInstructorPanel()">Instructor Panel</button>
@@ -1793,5 +1847,87 @@ render();
   refresh();
 })();
 </script>
+
+<!-- ===== Pharma Hub: How to Use / SOP =================================
+     A two-tab overlay (simulator instructions + instrument SOP), opened
+     from the toolbar and shown automatically on a student's first visit.
+     The SOP is duplicated into a hidden #sopPrintDoc so the Print button
+     produces a clean sheet rather than a screenshot of the app.
+     ==================================================================== -->
+<div id="sopPrintDoc"></div>
+<script>
+(function () {
+  var SEEN = "pharmahub.uvvis.guideSeen";
+  var tab = "howto";
+
+  var HOWTO = "\n<p>This is a guided simulation of instrument operation and handling. It runs through five\nstages in a fixed order, exactly as you would work at the bench.</p>\n\n<h4>The five stages</h4>\n<ol>\n  <li><strong>Instrument Introduction &amp; Power ON</strong> \u2014 learn the parts, then switch on.</li>\n  <li><strong>Setup, Blank &amp; Baseline</strong> \u2014 choose mode and wavelength, run the blank.</li>\n  <li><strong>Sample Loading &amp; Measurement</strong> \u2014 load the sample and read absorbance.</li>\n  <li><strong>Spectrum &amp; &lambda;max / Result</strong> \u2014 scan and find &lambda;<sub>max</sub>.</li>\n  <li><strong>Final Observation</strong> \u2014 review and complete your record.</li>\n</ol>\n\n<h4>Working through it</h4>\n<ul>\n  <li><strong>Stages are sequential.</strong> The next stage unlocks only once the current one\n      is done \u2014 you cannot skip ahead, just as you cannot skip steps on a real instrument.</li>\n  <li><strong>Follow the Laboratory Feedback box</strong> in the right-hand panel. It always\n      tells you the next action, and explains what went wrong if something is out of order.</li>\n  <li><strong>Watch the Observation Panel.</strong> It fills in as you work and becomes your\n      practical record. Enter your name at the top before you start.</li>\n  <li><strong>Save Observation</strong> at the bottom of each stage to lock in your readings.</li>\n  <li><strong>Progress</strong> is shown in the bar under the title.</li>\n</ul>\n\n<h4>The toolbar</h4>\n<table>\n  <tr><th>Button</th><th>What it does</th></tr>\n  <tr><td>\u2190 Library</td><td>Back to the resource library.</td></tr>\n  <tr><td>How to Use / SOP</td><td>This window. Reopen it at any time.</td></tr>\n  <tr><td>Switch Mode</td><td>Student or Instructor mode.</td></tr>\n  <tr><td>Instructor Panel</td><td>Teaching staff only \u2014 change drugs, ranges and settings.</td></tr>\n  <tr><td>Precautions</td><td>Quick laboratory safety reminders.</td></tr>\n  <tr><td>Reset Simulation</td><td>Clears everything and starts again with fresh values.</td></tr>\n  <tr><td>Mark complete</td><td>Records the session as done on your Pharma Hub progress.</td></tr>\n</table>\n\n<div class=\"tip\">Every run generates fresh values, so repeating the simulation gives a\ndifferent result each time. Practise until you can work through it without the prompts.</div>\n\n<h4>Before your practical</h4>\n<p>Read the <strong>Instrument SOP</strong> tab first. It is the procedure this simulation\nfollows, and the same one you will use on the real instrument.</p>\n";
+  var SOP = "\n<h4>1. Purpose and scope</h4>\n<p>Correct operation of a double-beam UV-Visible spectrophotometer for measuring the\nabsorbance of a solution and for determining &lambda;<sub>max</sub>. Applies to routine\nqualitative and quantitative work in pharmaceutical analysis.</p>\n\n<h4>2. Preliminary checks</h4>\n<ol>\n  <li>Instrument on a level, vibration-free bench, away from direct sunlight and heat.</li>\n  <li>Mains connection secure; no cuvette left behind in the sample compartment.</li>\n  <li>Cuvettes clean, dry, unscratched, and of the correct material for the region of use.</li>\n  <li>Solvent and solutions prepared, filtered if necessary, and at room temperature.</li>\n</ol>\n\n<h4>3. Switching on and warm-up</h4>\n<ol>\n  <li>Switch on the mains, then the instrument.</li>\n  <li>Allow self-initialisation to complete \u2014 lamp check, filter and grating positioning,\n      and wavelength calibration.</li>\n  <li>Warm up for <strong>15&ndash;30 minutes</strong> (20 minutes is usual).</li>\n</ol>\n<table>\n  <tr><th>Lamp</th><th>Region covered</th><th>Used for</th></tr>\n  <tr><td>Deuterium (D<sub>2</sub>)</td><td>190&ndash;400 nm</td><td>Ultraviolet</td></tr>\n  <tr><td>Tungsten&ndash;halogen</td><td>350&ndash;1100 nm</td><td>Visible / near IR</td></tr>\n</table>\n<div class=\"caution\"><strong>Do not take readings during warm-up.</strong> The source output\nis still stabilising, so the baseline drifts and results are not reproducible.</div>\n\n<h4>4. Selecting the mode and wavelength</h4>\n<ol>\n  <li>Select the mode: photometric (fixed wavelength), spectrum scan, or quantitative.</li>\n  <li>For a known substance, set the &lambda;<sub>max</sub> given in the pharmacopoeial\n      monograph.</li>\n  <li>For an unknown, run a spectrum scan across the region and read &lambda;<sub>max</sub>\n      from the peak.</li>\n  <li>Set the scan range wide enough to contain the whole absorption band.</li>\n</ol>\n<div class=\"tip\">Measure at &lambda;<sub>max</sub> wherever possible. Sensitivity is highest\nthere, and the curve is flattest \u2014 so a small wavelength error changes the absorbance least.</div>\n\n<h4>5. Cuvette selection and handling</h4>\n<ol>\n  <li><strong>Quartz</strong> below 340 nm. Glass and disposable plastic absorb UV and may\n      only be used in the visible region.</li>\n  <li>Use a matched pair of 1.00 cm path length cells.</li>\n  <li>Hold the cuvette by its frosted or ribbed faces only \u2014 never the clear optical faces.</li>\n  <li>Rinse with a little of the solution to be measured, then fill to about three-quarters\n      (roughly 2.5&ndash;3 mL).</li>\n  <li>Wipe the optical faces with lint-free tissue and check that no air bubbles cling to\n      the walls.</li>\n  <li>Insert with the clear faces facing the light path, always in the same orientation.</li>\n</ol>\n\n<h4>6. Blank and baseline correction</h4>\n<ol>\n  <li>The blank is the <strong>same solvent used to prepare the sample</strong> \u2014 not\n      distilled water unless water is the solvent.</li>\n  <li>Double-beam: place the blank in both the reference and sample positions.\n      Single-beam: place it in the sample position.</li>\n  <li>Close the compartment lid.</li>\n  <li>Press <strong>AUTO ZERO</strong>. The display should read A = 0.000.</li>\n  <li>For a scan, run a full baseline correction across the whole wavelength range.</li>\n</ol>\n<div class=\"caution\">Blank at the same wavelength, in the same cuvette type, immediately\nbefore measuring. A blank taken under different conditions is not a valid reference.</div>\n\n<h4>7. Measuring the sample</h4>\n<ol>\n  <li>Remove the blank from the sample position and replace it with the sample cuvette in\n      the same orientation. Leave the reference cell in place.</li>\n  <li>Close the lid \u2014 measuring with it open lets stray light reach the detector.</li>\n  <li>Press <strong>START / MEASURE</strong> and read the absorbance once stable.</li>\n  <li>Take readings in triplicate and record the mean.</li>\n</ol>\n<table>\n  <tr><th>Absorbance</th><th>Interpretation</th><th>Action</th></tr>\n  <tr><td>Below 0.1</td><td>Too dilute; poor precision</td><td>Use a stronger solution</td></tr>\n  <tr><td>0.2 &ndash; 0.8</td><td>Ideal working range</td><td>Proceed</td></tr>\n  <tr><td>0.8 &ndash; 1.0</td><td>Acceptable, nearing the limit</td><td>Proceed with care</td></tr>\n  <tr><td>Above 1.0</td><td>Stray-light error; response no longer linear</td><td>Dilute and repeat</td></tr>\n</table>\n\n<h4>8. Recording results</h4>\n<ol>\n  <li>Record wavelength, absorbance, solvent, cuvette type, dilution factor, date and analyst.</li>\n  <li>Print or export the spectrum where the method requires it and attach it to the record.</li>\n  <li>Calculate concentration from the calibration curve or from A(1%, 1 cm) as the method\n      specifies.</li>\n</ol>\n\n<h4>9. Shutdown</h4>\n<ol>\n  <li>Remove both cuvettes and discard the contents as directed for that solvent.</li>\n  <li>Rinse the cuvettes with solvent, then with distilled water; dry and return them to\n      their holder.</li>\n  <li>Close the empty compartment lid, exit the software, switch off the instrument, then\n      the mains.</li>\n  <li>Complete the instrument log book with date, user, and work done.</li>\n</ol>\n\n<h4>10. Common errors and their effect</h4>\n<table>\n  <tr><th>Error</th><th>What you see</th></tr>\n  <tr><td>Fingerprints on the optical faces</td><td>High or erratic absorbance</td></tr>\n  <tr><td>Air bubbles in the light path</td><td>Unstable, jumping readings</td></tr>\n  <tr><td>Glass cuvette used below 340 nm</td><td>Falsely high absorbance; cell absorbs the UV</td></tr>\n  <tr><td>Lid left open</td><td>Low absorbance from stray light</td></tr>\n  <tr><td>Blank in a different solvent</td><td>Constant offset in every reading</td></tr>\n  <tr><td>Reading taken during warm-up</td><td>Baseline drift; poor reproducibility</td></tr>\n  <tr><td>Measuring away from &lambda;<sub>max</sub></td><td>Low sensitivity; results very sensitive to wavelength error</td></tr>\n</table>\n";
+
+  function render() {
+    var host = document.getElementById("modalHost");
+    host.innerHTML =
+      '<div class="modal-overlay"><div class="modal-box guide-box">' +
+        '<div class="guide-head">' +
+          '<h3>UV-Visible Spectrophotometer</h3>' +
+          '<div class="guide-sub">Instrument operation and handling — Pharmaceutical Analysis</div>' +
+          '<div class="guide-tabs">' +
+            '<button class="guide-tab' + (tab === "howto" ? " on" : "") + '" ' +
+              'onclick="App.guideTab(\'howto\')">How to use this simulator</button>' +
+            '<button class="guide-tab' + (tab === "sop" ? " on" : "") + '" ' +
+              'onclick="App.guideTab(\'sop\')">Instrument SOP</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="guide-body" id="guideBody">' + (tab === "howto" ? HOWTO : SOP) + '</div>' +
+        '<div class="guide-foot">' +
+          '<span class="left">Reopen any time from <strong>How to Use / SOP</strong> in the toolbar.</span>' +
+          '<span class="right">' +
+            '<button class="btn btn-ghost" onclick="App.printSOP()">🖨 Print SOP</button>' +
+            '<button class="btn btn-primary" onclick="App.closeModal()">Got it — begin</button>' +
+          '</span>' +
+        '</div>' +
+      '</div></div>';
+  }
+
+  function openGuide(which) {
+    tab = which || "howto";
+    render();
+    try { localStorage.setItem(SEEN, "1"); } catch (e) {}
+  }
+
+  function guideTab(which) {
+    tab = which;
+    var body = document.getElementById("guideBody");
+    if (body) {
+      body.innerHTML = (tab === "howto" ? HOWTO : SOP);
+      body.scrollTop = 0;
+      var tabs = document.querySelectorAll(".guide-tab");
+      tabs[0].className = "guide-tab" + (tab === "howto" ? " on" : "");
+      tabs[1].className = "guide-tab" + (tab === "sop" ? " on" : "");
+    } else {
+      render();
+    }
+  }
+
+  function printSOP() {
+    var d = new Date();
+    document.getElementById("sopPrintDoc").innerHTML =
+      "<h1>Standard Operating Procedure — UV-Visible Spectrophotometer</h1>" +
+      '<div class="meta">Pharma Hub · Pharmaceutical Analysis · ' +
+      "Printed " + d.toLocaleDateString() + "</div>" + SOP;
+    window.print();
+  }
+
+  if (window.App) {
+    App.openGuide = openGuide;
+    App.guideTab = guideTab;
+    App.printSOP = printSOP;
+  }
+
+  var seen = null;
+  try { seen = localStorage.getItem(SEEN); } catch (e) {}
+  if (!seen) openGuide("howto");
+})();
+</script>
 </body>
 </html>
+
