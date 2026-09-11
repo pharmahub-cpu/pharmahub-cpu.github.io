@@ -357,6 +357,48 @@ section.block { padding-block: clamp(34px, 5vw, 56px); }
   pointer-events: none;
 }
 
+/* ---- Simulation tiles: vivid gradient cards, dynamic (cycling) colours ----
+   Only .accent-sim cards get this treatment — notes/decks/docs/etc. keep the
+   plain surface-card look above. Colours cycle by position so a row of
+   simulation cards reads as a set of distinct, colourful tool tiles. */
+.card.accent-sim {
+  border-color: transparent;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22), var(--shadow);
+}
+.card.accent-sim::before { display: none; }
+.card.accent-sim:hover { transform: translateY(-3px); border-color: transparent; filter: brightness(1.04); }
+.card.accent-sim:nth-of-type(3n+1) { background: linear-gradient(135deg, #3660df 0%, #1c3aa0 100%); }
+.card.accent-sim:nth-of-type(3n+2) { background: linear-gradient(135deg, #12ab8e 0%, #0b7d67 100%); }
+.card.accent-sim:nth-of-type(3n)   { background: linear-gradient(135deg, #e2941f 0%, #b5690f 100%); }
+
+.card.accent-sim .card-icon {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+.card.accent-sim .card-type { color: rgba(255, 255, 255, 0.85); }
+.card.accent-sim .card-title { color: #fff; }
+.card.accent-sim .card-desc { color: rgba(255, 255, 255, 0.88); }
+.card.accent-sim .chip { background: rgba(255, 255, 255, 0.16); color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+.card.accent-sim .chip-subject { background: rgba(255, 255, 255, 0.26); color: #fff; }
+.card.accent-sim .status-soon { background: rgba(255, 255, 255, 0.16); color: rgba(255, 255, 255, 0.9); border-color: rgba(255, 255, 255, 0.32); }
+.card.accent-sim .status-done { background: #fff; color: #0a5f59; }
+.card.accent-sim .btn-primary { background: #fff; color: #15335a; }
+.card.accent-sim .btn-primary:hover { filter: brightness(0.96); }
+.card.accent-sim .btn-ghost { border-color: rgba(255, 255, 255, 0.55); color: #fff; }
+.card.accent-sim .btn-ghost:hover { border-color: #fff; color: #fff; background: rgba(255, 255, 255, 0.14); }
+.card.accent-sim .btn-check { border-color: rgba(255, 255, 255, 0.5); color: rgba(255, 255, 255, 0.9); }
+.card.accent-sim .btn-check:hover,
+.card.accent-sim .btn-check.is-done { border-color: #fff; color: #fff; }
+.card.accent-sim.card-soon { opacity: 0.82; }
+.card.accent-sim.card-done::after { border-color: rgba(255, 255, 255, 0.65); }
+
 .card-top { display: flex; align-items: center; gap: 9px; }
 .card-icon { font-size: 18px; color: var(--card-accent); }
 .card-type {

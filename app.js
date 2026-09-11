@@ -116,12 +116,6 @@ function renderLayout() {
         ]),
         el("div", { class: "footer-links" }, [
           el("a", { href: `mailto:${SITE.contactEmail}`, text: SITE.contactEmail }),
-          el("a", {
-            href: SITE.parentSite,
-            target: "_blank",
-            rel: "noopener",
-            text: SITE.parentSite.replace(/^https?:\/\//, ""),
-          }),
         ]),
       ])
     );
@@ -217,8 +211,6 @@ function buildCard(r) {
   const meta = [
     el("span", { class: "chip chip-subject", text: r.subject }),
     el("span", { class: "chip", text: r.category }),
-    r.level ? el("span", { class: "chip chip-soft", text: r.level }) : null,
-    r.duration ? el("span", { class: "chip chip-soft", text: r.duration }) : null,
   ].filter(Boolean);
 
   return el(

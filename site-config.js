@@ -19,8 +19,7 @@ const SITE = {
   description:
     "Interactive instrument simulations, virtual experiments, notes, " +
     "presentations and practice questions for pharmacy students.",
-  contactEmail: "edutechservices1122@gmail.com",
-  parentSite: "https://edutechservice.in",
+  contactEmail: "ssmacademic@gmail.com",
 
   // Shown on the homepage hero. Purely cosmetic.
   heroKicker: "Learn by doing",
