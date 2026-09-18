@@ -234,7 +234,14 @@ function buildCard(r) {
           : el("span", { class: "status status-soon", text: STATUS_LABELS["coming-soon"] }),
       ]),
       el("h3", { class: "card-title", text: r.title }),
-      el("p", { class: "card-desc", text: r.description }),
+      r.image
+        ? el("img", {
+            class: "card-image",
+            src: resolveUrl(r.image),
+            alt: r.title,
+            loading: "lazy",
+          })
+        : el("p", { class: "card-desc", text: r.description }),
       el("div", { class: "card-meta" }, meta),
       el("div", { class: "card-actions" }, actions),
     ]
