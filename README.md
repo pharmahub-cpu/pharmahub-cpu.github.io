@@ -87,8 +87,8 @@ Commit. The card appears with **View PDF** and **Download** buttons.
 | `simulation-kit.js` | Shared header and helpers for simulations |
 | `style.css` | Platform styling |
 | `sim.css` | Simulation styling |
-| `uv-vis.html` | UV-Visible spectrophotometer simulation |
-| `paracetamol-assay.html` | Paracetamol assay simulation |
+| `uv-vis/index.html` | UV-Visible spectrophotometer simulation |
+| `paracetamol-assay/index.html` | Paracetamol assay simulation |
 | `template-simulation.html` | Starting point for a new simulation |
 | `.nojekyll` | Tells GitHub Pages to serve files as-is |
 
