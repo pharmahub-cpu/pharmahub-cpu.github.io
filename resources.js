@@ -90,6 +90,7 @@ const RESOURCES = [
     level: "B.Pharm 2nd Year",
     duration: "25 min",
     tags: ["paracetamol", "acetaminophen", "assay", "uv", "calibration curve"],
+    image: "./paracetamol-assay-instrument.jpg",
   },
 
   /* ===================== COMING SOON =====================
