@@ -93,6 +93,26 @@ const RESOURCES = [
     image: "./paracetamol-assay-instrument.jpg",
   },
 
+  {
+    id: "circular-paper-chromatography",
+    title: "Circular Paper Chromatography of Amino Acids",
+    description:
+      "Spot standard amino acids and an unknown mixture around a common " +
+      "origin circle, develop radially outward, detect with ninhydrin and " +
+      "calculate Rf values to identify the unknown components.",
+    type: "simulation",
+    subject: "Pharmaceutical Analysis",
+    category: "Virtual Experiment",
+    url: "./circular-paper-chromatography.html",
+    status: "available",
+    featured: true,
+    added: "2026-09-29",
+    level: "Diploma / B.Pharm",
+    duration: "35 min",
+    tags: ["paper chromatography", "amino acids", "rf value", "ninhydrin", "circular chromatography"],
+    image: "./circular-paper-chromatography.jpg",
+  },
+
   /* ===================== COMING SOON =====================
      Visible on the site, button disabled, no URL. Delete the
      `status` line and add a `url` when the resource goes live. */
