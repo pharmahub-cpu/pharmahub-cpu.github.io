@@ -45,7 +45,7 @@ header#topbar{
 .progress-fill{height:100%;background:var(--accent);border-radius:6px;transition:width .4s ease;}
 
 /* ===== LAYOUT ===== */
-.layout{display:grid;grid-template-columns:230px 1fr 300px;gap:16px;padding:16px;padding-bottom:76px;flex:1;align-items:start;}
+.layout{display:grid;grid-template-columns:230px 1fr 300px;gap:16px;padding:16px;padding-bottom:96px;flex:1;align-items:start;}
 @media (max-width:1100px){.layout{grid-template-columns:1fr;}#stageNav{order:1;}#workspace{order:2;}#obsPanel{order:3;}}
 
 nav#stageNav{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;}
@@ -75,6 +75,8 @@ table.obs-table td.val{font-weight:700;color:var(--ink);text-align:right;}
 
 /* ===== FOOTER ===== */
 footer#navfooter{display:flex;justify-content:space-between;align-items:center;padding:12px 22px;background:var(--panel);border-top:1px solid var(--border);gap:10px;flex-wrap:wrap;position:fixed;left:0;right:0;bottom:0;z-index:60;box-shadow:0 -4px 14px rgba(0,0,0,.14);}
+.navfooter-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.prepared-by-credit{font-size:11px;color:var(--muted);}
 .btn{border:none;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:700;transition:.15s;}
 .btn-primary{background:var(--primary);color:#fff;}
 .btn-primary:hover{background:var(--primary-dark);}
@@ -414,9 +416,12 @@ input[type=range]{width:100%;}
   </div>
 
   <footer id="navfooter">
-    <button class="btn btn-secondary" id="btnPrev" onclick="App.prevStage()">← Previous</button>
-    <button class="btn btn-outline" onclick="App.saveObservation()">💾 Save Observation</button>
-    <button class="btn btn-primary" id="btnNext" onclick="App.nextStage()">Next →</button>
+    <div class="navfooter-actions">
+      <button class="btn btn-secondary" id="btnPrev" onclick="App.prevStage()">← Previous</button>
+      <button class="btn btn-outline" onclick="App.saveObservation()">💾 Save Observation</button>
+      <button class="btn btn-primary" id="btnNext" onclick="App.nextStage()">Next →</button>
+    </div>
+    <span class="prepared-by-credit">Prepared by: Shrikrishna S. Maske, Lecturer, Govt. Polytechnic, Dept. of Pharmacy, Ratnagiri.</span>
   </footer>
 </div>
 
