@@ -375,6 +375,13 @@ function jsmeOnLoad(){
   var s1 = document.createElement('script');
   s1.src = 'jsme/jsme.nocache.js';
   s1.onerror = function(){
+    // Important: remove the failed local <script> tag before injecting the CDN one.
+    // GWT's bootstrap (jsme.nocache.js) computes its own "module base URL" by scanning
+    // the page for a <script> tag whose src matches its own filename -- if the broken
+    // local tag is left in the DOM, GWT can pick ITS path as the base instead of the
+    // CDN one, and then every sibling resource (css, compiled .cache.js) 404s even
+    // though the bootstrap script itself loaded fine from the CDN.
+    if(s1.parentNode) s1.parentNode.removeChild(s1);
     var note = document.getElementById('jsmeLoadingNote');
     if(note) note.textContent = 'Loading structure editor…';
     var s2 = document.createElement('script');
