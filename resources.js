@@ -112,8 +112,8 @@ const RESOURCES = [
     tags: ["paper chromatography", "amino acids", "rf value", "ninhydrin", "circular chromatography"],
     image: "./circular-paper-chromatography.jpg",
   },
-
    { id: "pmr-nmr-predictor", title: "PMR / 1H NMR Spectrum Predictor", description: "Draw any organic structure with the built-in molecule editor and instantly predict its proton (1H) NMR spectrum - chemical shifts, splitting patterns and integration - to build intuition for reading real spectra.", type: "simulation", subject: "Pharmaceutical Chemistry", category: "Interactive Tool", url: "./pmr-nmr-predictor.html", status: "available", featured: true, added: "2026-10-31", level: "Diploma / B.Pharm", duration: "20 min", tags: ["NMR", "PMR", "proton NMR", "spectroscopy", "chemical shift", "spin-spin splitting"], image: "./pmr-nmr-predictor.png" },
+   { id: "woodward-fieser-calculator", title: "Woodward-Fieser Rule Calculator", description: "Sketch a conjugated diene, polyene or alpha,beta-unsaturated carbonyl compound in a full structure editor, then build the Woodward-Fieser increment table step by step to predict its UV absorption maximum.", type: "simulation", subject: "Pharmaceutical Chemistry", category: "Interactive Tool", url: "./woodward-fieser-calculator.html", status: "available", featured: true, added: "2026-10-31", level: "Diploma / B.Pharm", duration: "25 min", tags: ["Woodward-Fieser", "UV spectroscopy", "conjugated diene", "lambda max", "absorption maximum"], image: "./woodward-fieser-calculator.png" },
    
    /* ===================== COMING SOON =====================
      Visible on the site, button disabled, no URL. Delete the
