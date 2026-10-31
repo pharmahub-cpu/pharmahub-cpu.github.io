@@ -113,7 +113,9 @@ const RESOURCES = [
     image: "./circular-paper-chromatography.jpg",
   },
 
-  /* ===================== COMING SOON =====================
+   { id: "pmr-nmr-predictor", title: "PMR / 1H NMR Spectrum Predictor", description: "Draw any organic structure with the built-in molecule editor and instantly predict its proton (1H) NMR spectrum - chemical shifts, splitting patterns and integration - to build intuition for reading real spectra.", type: "simulation", subject: "Pharmaceutical Chemistry", category: "Interactive Tool", url: "./pmr-nmr-predictor.html", status: "available", featured: true, added: "2026-10-31", level: "Diploma / B.Pharm", duration: "20 min", tags: ["NMR", "PMR", "proton NMR", "spectroscopy", "chemical shift", "spin-spin splitting"] },
+   
+   /* ===================== COMING SOON =====================
      Visible on the site, button disabled, no URL. Delete the
      `status` line and add a `url` when the resource goes live. */
 
