@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMR / ¹H NMR Spectrum Predictor</title>
+<style>
+:root{
+  --bg:#0f1420; --panel:#161d2e; --panel2:#1c2437; --border:#2a3550;
+  --ink:#eaf0fb; --muted:#93a1c2; --accent:#5b9dff; --accent2:#7fd4b8;
+  --good:#3ddc97; --warn:#ffc266; --bad:#ff6b6b;
+  --radius:12px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+body{line-height:1.45;}
+a{color:var(--accent);}
+header.top{
+  padding:18px 22px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,#131a2b,#1a2642 60%,#15213a);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+header.top h1{margin:0;font-size:1.32rem;letter-spacing:.2px;}
+header.top .sub{color:var(--muted);font-size:.86rem;margin-top:3px;}
+header.top .badge{
+  background:rgba(91,157,255,.14);border:1px solid rgba(91,157,255,.4);color:#bcd7ff;
+  padding:5px 12px;border-radius:999px;font-size:.76rem;font-weight:600;letter-spacing:.3px;
+}
+.layout{display:grid;grid-template-columns:330px 1fr;gap:18px;padding:18px;align-items:start;}
+@media (max-width:980px){ .layout{grid-template-columns:1fr;} }
+
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.panel h2{margin:0 0 10px;font-size:1rem;color:#dce6fb;}
+.panel h3{margin:14px 0 8px;font-size:.84rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+
+/* ---- mode tabs ---- */
+.mode-tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--panel2);padding:4px;border-radius:10px;}
+.mode-tabs button{
+  flex:1;padding:9px 4px;border:0;border-radius:8px;background:transparent;color:var(--muted);
+  font-weight:600;font-size:.76rem;cursor:pointer;transition:.15s;white-space:nowrap;
+}
+.mode-tabs button.active{background:var(--accent);color:#06101f;}
+
+/* ---- library ---- */
+.search-row{display:flex;gap:8px;margin-bottom:10px;}
+.search-row input{
+  flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--ink);
+  border-radius:8px;padding:8px 10px;font-size:.86rem;
+}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.chip{
+  background:var(--panel2);border:1px solid var(--border);color:var(--muted);
+  padding:4px 10px;border-radius:999px;font-size:.74rem;cursor:pointer;user-select:none;
+}
+.chip.active{background:rgba(127,212,184,.16);border-color:var(--accent2);color:var(--accent2);}
+
+.compound-grid{display:flex;flex-direction:column;gap:6px;max-height:460px;overflow-y:auto;padding-right:4px;}
+.compound-card{
+  text-align:left;background:var(--panel2);border:1px solid var(--border);border-radius:9px;
+  padding:9px 11px;cursor:pointer;transition:.12s;
+}
+.compound-card:hover{border-color:var(--accent);}
+.compound-card.selected{border-color:var(--accent2);background:rgba(127,212,184,.08);}
+.compound-card .nm{font-weight:700;font-size:.88rem;}
+.compound-card .fm{color:var(--muted);font-size:.76rem;font-family:'Courier New',monospace;margin-top:1px;}
+
+/* ---- builder ---- */
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px;}
+.field select,.field input[type=range]{width:100%;}
+.field select{
+  background:var(--panel2);border:1px solid var(--border);color:var(--ink);
+  border-radius:8px;padding:8px 10px;font-size:.86rem;
+}
+.range-wrap{display:flex;align-items:center;gap:10px;}
+.range-wrap output{font-weight:700;min-width:20px;text-align:center;color:var(--accent2);}
+.builder-name{
+  margin-top:4px;background:var(--panel2);border:1px dashed var(--border);border-radius:9px;
+  padding:10px 12px;font-size:.88rem;
+}
+.builder-name b{color:var(--accent2);}
+.note-box{
+  font-size:.75rem;color:var(--muted);background:rgba(255,194,102,.08);
+  border:1px solid rgba(255,194,102,.3);border-radius:8px;padding:8px 10px;margin-top:10px;
+}
+
+/* ---- main content ---- */
+.main-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+.main-top .title{font-size:1.15rem;font-weight:700;}
+.main-top .formula{color:var(--muted);font-family:'Courier New',monospace;font-size:.95rem;}
+.btn{
+  background:var(--accent);color:#06101f;border:0;border-radius:9px;padding:11px 20px;
+  font-weight:700;font-size:.92rem;cursor:pointer;transition:.12s;
+}
+.btn:hover{filter:brightness(1.08);}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn.secondary{background:var(--panel2);color:var(--ink);border:1px solid var(--border);}
+
+.stage-box{
+  background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;margin-top:12px;
+}
+.stage-box h3{margin:0 0 10px;font-size:.84rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+/* side-by-side structure + spectrum, so a redrawn structure and its new spectrum sit next to
+   each other for easy comparison -- stacks back to one column on narrow screens. */
+.stage-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-top:12px;}
+.stage-row .stage-box{margin-top:0;min-width:0;}
+@media (max-width:860px){ .stage-row{grid-template-columns:1fr;} }
+.structure-wrap{display:flex;justify-content:center;overflow-x:auto;padding:6px 0;}
+.structure-wrap svg{display:block;max-width:100%;height:auto;}
+#jsmeStage{display:flex;flex-direction:column;align-items:center;gap:8px;overflow-x:auto;max-width:100%;}
+#jsmeContainer{background:#fff;border-radius:8px;overflow:hidden;max-width:100%;}
+.jsme-note{font-size:.76rem;color:var(--muted);}
+#spectrumArea{overflow-x:auto;}
+#spectrumArea svg{display:block;width:100%;height:auto;min-width:380px;}
+
+.predict-row{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap;}
+.placeholder{
+  text-align:center;color:var(--muted);padding:34px 10px;font-size:.9rem;
+  border:1px dashed var(--border);border-radius:10px;
+}
+
+.spectrum-wrap{overflow-x:auto;}
+.spectrum-wrap svg{display:block;min-width:640px;width:100%;}
+
+table.sig-table{width:100%;border-collapse:collapse;margin-top:4px;font-size:.86rem;}
+table.sig-table th{
+  text-align:left;color:var(--muted);font-weight:600;font-size:.74rem;text-transform:uppercase;
+  letter-spacing:.4px;padding:7px 8px;border-bottom:1px solid var(--border);
+}
+table.sig-table td{padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.04);}
+table.sig-table tr{cursor:pointer;transition:background .12s;}
+table.sig-table tr:hover{background:rgba(255,255,255,.03);}
+table.sig-table tr.highlight{background:rgba(91,157,255,.14);}
+.structure-wrap svg [data-group],.spectrum-wrap svg [data-group]{transition:opacity .15s;}
+.structure-wrap svg.has-sel [data-group],.spectrum-wrap svg.has-sel [data-group]{opacity:.28;}
+.structure-wrap svg.has-sel [data-group].sel-on,.spectrum-wrap svg.has-sel [data-group].sel-on{opacity:1;}
+.hlabel.sel-on .hhalo{fill-opacity:.55 !important;}
+.spec-group.sel-on .spec-line{stroke-width:3.6 !important;}
+.caption-note{margin-top:10px;font-size:.78rem;color:var(--muted);font-style:italic;border-left:2px solid var(--border);padding-left:10px;}
+.swatch{display:inline-block;width:13px;height:13px;border-radius:4px;vertical-align:-2px;margin-right:7px;}
+.mult-tag{
+  display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  padding:1px 7px;font-size:.75rem;color:var(--accent2);
+}
+
+/* ---- rules reference ---- */
+.rules-panel{margin-top:18px;}
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:10px;}
+.rule-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;}
+.rule-card .num{
+  display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+  background:var(--accent);color:#06101f;font-weight:800;font-size:.76rem;margin-right:7px;
+}
+.rule-card h4{margin:6px 0 5px;font-size:.92rem;}
+.rule-card p{margin:0;color:var(--muted);font-size:.82rem;}
+.mini-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.78rem;}
+.mini-table th,.mini-table td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;}
+.mini-table th{color:var(--muted);font-weight:600;}
+details.rules-toggle{margin-top:18px;}
+details.rules-toggle>summary{
+  cursor:pointer;font-weight:700;padding:10px 4px;color:var(--accent2);list-style:none;
+  display:flex;align-items:center;gap:8px;
+}
+details.rules-toggle>summary::-webkit-details-marker{display:none;}
+details.rules-toggle>summary:before{content:'▸';transition:.15s;}
+details.rules-toggle[open]>summary:before{content:'▾';}
+
+.footer-note{color:var(--muted);font-size:.76rem;text-align:center;padding:18px;}
+
+::-webkit-scrollbar{height:9px;width:9px;}
+::-webkit-scrollbar-thumb{background:#2a3550;border-radius:6px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>⚛️ PMR / ¹H NMR Spectrum Predictor</h1>
+    <div class="sub">Build or pick a structure → predict signals, multiplicity, integration &amp; chemical shift</div>
+  </div>
+  <div class="badge">Developed by Shrikrishna S. Maske, Lecturer, Govt. Polytechnic, Dept. of Pharmacy, Ratnagiri</div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: controls -->
+  <div class="panel">
+    <div class="mode-tabs">
+      <button id="tabLibrary" class="active">📚 Library</button>
+      <button id="tabBuilder">🧪 Build Chain</button>
+      <button id="tabDraw">✏️ Draw</button>
+    </div>
+
+    <!-- LIBRARY MODE -->
+    <div id="libraryMode">
+      <div class="search-row">
+        <input id="searchBox" type="text" placeholder="Search e.g. ethanol, ester...">
+      </div>
+      <div class="chip-row" id="categoryChips"></div>
+      <div class="compound-grid" id="compoundGrid"></div>
+    </div>
+
+    <!-- BUILDER MODE -->
+    <div id="builderMode" style="display:none;">
+      <div class="field">
+        <label>Chain length (number of backbone carbons): <span id="chainLenOut">4</span></label>
+        <div class="range-wrap">
+          <input type="range" id="chainLenRange" min="1" max="8" value="4" step="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Terminal functional group (R–X)</label>
+        <select id="funcGroupSelect"></select>
+      </div>
+      <div class="builder-name" id="builderNameBox">CH₃–CH₂–CH₂–CH₃ <b>(Butane)</b></div>
+      <div class="note-box">
+        Straight (unbranched) chain only. Splitting uses the simple pooled (n+1) rule exactly as in
+        your reference notes — all vicinal protons on either side are counted together as n.
+      </div>
+    </div>
+
+    <!-- DRAW MODE -->
+    <div id="drawModeBox" style="display:none;">
+      <div class="note-box">
+        Draw <b>any</b> organic structure with the editor on the right (bond tools, ring
+        templates and the atom palette along its toolbar), then click
+        <b>“Predict NMR Spectrum.”</b>
+      </div>
+      <div class="note-box" style="margin-top:8px;">
+        This mode works out equivalent protons, shift and splitting automatically from the
+        structure you draw (symmetry + the same shift-range / pooled (n+1) rules used
+        elsewhere in this tool) — so it is a general approximation, not a lookup of a fixed
+        library entry. Expect it to be very good for simple teaching molecules and
+        reasonable-but-approximate for complex multi-substituted ones.
+      </div>
+      <button class="btn secondary" id="jsmeClearBtn" style="margin-top:10px;width:100%;">Clear drawing</button>
+    </div>
+
+    <h3 style="margin-top:20px;">Quick legend</h3>
+    <div style="font-size:.78rem;color:var(--muted);line-height:1.7;">
+      Each colour = one chemical environment (signal).<br>
+      Click a peak, a table row, or a coloured H in the structure — the matching parts light up together.
+    </div>
+  </div>
+
+  <!-- RIGHT: main content -->
+  <div>
+    <div class="panel">
+      <div class="main-top">
+        <div>
+          <div class="title" id="mainTitle">Ethanol</div>
+          <div class="formula" id="mainFormula">CH₃CH₂OH</div>
+        </div>
+        <button class="btn" id="predictBtn">Predict NMR Spectrum ▶</button>
+      </div>
+
+      <div class="stage-row">
+        <div class="stage-box">
+          <h3>Structure</h3>
+          <div class="structure-wrap" id="structureWrap"></div>
+          <div id="jsmeStage" style="display:none;">
+            <div id="jsmeContainer"></div>
+            <div class="jsme-note" id="jsmeLoadingNote">Loading structure editor…</div>
+          </div>
+        </div>
+
+        <div class="stage-box" id="spectrumStage">
+          <h3>¹H NMR Spectrum</h3>
+          <div id="spectrumArea">
+            <div class="placeholder">Click "Predict NMR Spectrum" to generate the spectrum for this structure.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage-box" id="tableStage" style="display:none;">
+        <h3>Signal Summary</h3>
+        <table class="sig-table" id="sigTable">
+          <thead><tr><th>Group</th><th>δ (ppm)</th><th>Multiplicity</th><th>n (neighbours)</th><th>Integration</th></tr></thead>
+          <tbody id="sigTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <details class="rules-toggle panel" id="rulesPanel">
+      <summary>📖 The Four Rules of PMR Interpretation (reference)</summary>
+      <div class="rules-grid">
+        <div class="rule-card">
+          <h4><span class="num">1</span>Number of Signals</h4>
+          <p>Chemically equivalent protons give <b>one</b> signal. Count different environments, not total H atoms.</p>
+        </div>
+        <div class="rule-card">
+          <h4><span class="num">2</span>Chemical Shift (δ)</h4>
+          <p>Position (ppm) shows the proton's environment. More deshielded (near O, N, halogen, C=O, ring) → higher ppm.</p>
+        </div>
+        <div class="rule-card">
+          <h4><span class="num">3</span>Integration</h4>
+          <p>Area under each signal ∝ number of protons responsible for it. Expressed as a simplest-whole-number ratio.</p>
+        </div>
+        <div class="rule-card">
+          <h4><span class="num">4</span>Splitting — (n+1) Rule</h4>
+          <p>Number of peaks in a signal = n + 1, where n = number of equivalent neighbouring protons.</p>
+        </div>
+      </div>
+
+      <h3>Approximate chemical shift ranges</h3>
+      <table class="mini-table">
+        <tr><th>Proton type</th><th>δ (ppm)</th></tr>
+        <tr><td>Alkyl (R–CH₃, R–CH₂–R)</td><td>0.8 – 2.0</td></tr>
+        <tr><td>Allylic (C=C–CH)</td><td>1.6 – 2.5</td></tr>
+        <tr><td>Next to carbonyl (–CO–CH)</td><td>2.0 – 2.7</td></tr>
+        <tr><td>On carbon bearing halogen</td><td>3.0 – 4.5</td></tr>
+        <tr><td>On carbon bearing oxygen</td><td>3.0 – 4.5</td></tr>
+        <tr><td>On carbon bearing nitrogen</td><td>2.2 – 4.0</td></tr>
+        <tr><td>Vinylic (C=C–H)</td><td>4.5 – 6.5</td></tr>
+        <tr><td>Aromatic (Ar–H)</td><td>6.0 – 8.5</td></tr>
+        <tr><td>Aldehydic (–CHO)</td><td>9.0 – 10.5</td></tr>
+        <tr><td>Carboxylic acid (–COOH)</td><td>10 – 13</td></tr>
+      </table>
+
+      <h3>Pascal's triangle — peak intensity ratios</h3>
+      <table class="mini-table">
+        <tr><th>n</th><th>Splitting</th><th>Relative intensities</th></tr>
+        <tr><td>0</td><td>Singlet</td><td>1</td></tr>
+        <tr><td>1</td><td>Doublet</td><td>1 : 1</td></tr>
+        <tr><td>2</td><td>Triplet</td><td>1 : 2 : 1</td></tr>
+        <tr><td>3</td><td>Quartet</td><td>1 : 3 : 3 : 1</td></tr>
+        <tr><td>4</td><td>Quintet</td><td>1 : 4 : 6 : 4 : 1</td></tr>
+        <tr><td>5</td><td>Sextet</td><td>1 : 5 : 10 : 10 : 5 : 1</td></tr>
+        <tr><td>6</td><td>Septet</td><td>1 : 6 : 15 : 20 : 15 : 6 : 1</td></tr>
+      </table>
+    </details>
+
+    <div class="footer-note">Shifts are representative teaching values within the standard literature ranges above — real spectra vary with solvent, concentration and temperature.</div>
+    <div class="footer-note" style="padding-top:0;">Prepared by: Shrikrishna S. Maske, Lecturer, Govt. Polytechnic, Dept. of Pharmacy, Ratnagiri.</div>
+  </div>
+</div>
+
+<!-- JSME Molecule Editor (Peter Ertl / Bruno Bienfait, jsme-editor.github.io, BSD-3-Clause).
+     jsmeOnLoad() is JSME's own documented startup hook -- it must exist globally before
+     jsme.nocache.js runs. -->
+<script>
+function jsmeOnLoad(){
+  var applet = null;
+  // JSME's constructor options argument has varied across releases (a plain options
+  // string vs an {options:"..."} object) -- try the documented forms in order and fall
+  // back to no fourth argument at all rather than fail to load the editor.
+  try{ applet = new JSApplet.JSME("jsmeContainer", "420px", "380px", { options: "oldlook,star" }); }
+  catch(e1){
+    try{ applet = new JSApplet.JSME("jsmeContainer", "420px", "380px", "oldlook,star"); }
+    catch(e2){
+      try{ applet = new JSApplet.JSME("jsmeContainer", "420px", "380px"); }
+      catch(e3){ applet = null; }
+    }
+  }
+  var note = document.getElementById('jsmeLoadingNote');
+  if(applet){
+    window.jsmeApplet = applet;
+    window.__jsmeReady = true;
+    if(note) note.style.display = 'none';
+  } else if(note){
+    note.textContent = 'The structure editor could not load in this browser.';
+  }
+}
+</script>
+<script>
+(function(){
+  // Prefer a bundled local copy (jsme/jsme.nocache.js next to this file -- used when this
+  // page is distributed as the offline zip with the jsme/ folder alongside it). If that
+  // path 404s (e.g. this single HTML file was uploaded standalone to a website), fall back
+  // automatically to the public jsDelivr CDN mirror of the same official JSME release, so
+  // one file works both offline and hosted.
+  var CDN_JSME = 'https://cdn.jsdelivr.net/npm/jsme-editor@2024.4.29/jsme.nocache.js';
+  var s1 = document.createElement('script');
+  s1.src = 'jsme/jsme.nocache.js';
+  s1.onerror = function(){
+    var note = document.getElementById('jsmeLoadingNote');
+    if(note) note.textContent = 'Loading structure editor…';
+    var s2 = document.createElement('script');
+    s2.src = CDN_JSME;
+    s2.onerror = function(){
+      if(note) note.textContent = 'The structure editor could not be loaded (no local jsme/ folder found, and the CDN is unreachable).';
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   0. CONSTANTS & SMALL HELPERS
+   ========================================================================= */
+const COLORS = ['#ef476f','#ffd166','#06d6a0','#118ab2','#9b5de5','#f3722c','#4cc9f0','#80ed99','#f72585','#43aa8b','#ff9f1c','#4895ef'];
+const SUB_DIGITS = {0:'₀',1:'₁',2:'₂',3:'₃',4:'₄',5:'₅',6:'₆',7:'₇',8:'₈',9:'₉'};
+function sub(n){ return String(n).split('').map(c=>SUB_DIGITS[c]!==undefined?SUB_DIGITS[c]:c).join(''); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+const MULT_NAMES = {0:'Singlet',1:'Doublet',2:'Triplet',3:'Quartet',4:'Quintet',5:'Sextet',6:'Septet',7:'Octet',8:'Nonet',9:'Decet'};
+const MULT_ABBR  = {0:'s',1:'d',2:'t',3:'q',4:'quint',5:'sext',6:'sept',7:'oct',8:'non',9:'dec'};
+function multName(n){ if(n===null||n===undefined) return 'Multiplet'; return MULT_NAMES[n] || ('Multiplet ('+(n+1)+' lines)'); }
+function multAbbr(n){ if(n===null||n===undefined) return 'm'; return MULT_ABBR[n] || ((n+1)+'-line'); }
+
+// Binomial coefficients (Pascal's triangle row n) -> relative peak intensities for an (n+1)-line multiplet.
+function pascalRow(n){
+  const row=[1];
+  for(let k=1;k<=n;k++){ row.push(Math.round(row[k-1]*(n-k+1)/k)); }
+  return row;
+}
+
+/* Build a signal object.
+   n        = number of equivalent neighbouring protons (null for lumped / non first-order signals)
+   opts.mult / opts.abbr override the computed name (used for aromatic "multiplet" and broad singlets) */
+function Sig(groupId,label,delta,n,integration,color,opts){
+  opts = opts || {};
+  return {
+    groupId, label, delta, n, integration, color,
+    mult: opts.mult || multName(n),
+    abbr: opts.abbr || multAbbr(n),
+    broad: !!opts.broad,
+    note: opts.note || ''
+  };
+}
+
+/* Chain / branch node helper.
+   el        : 'C' | 'O' | 'N'
+   h         : number of protons directly on this atom (0-4)
+   groupId   : links to a Sig() above; null if this atom carries no proton signal
+   opts.doubleBondO : draws a C=O
+   opts.branches     : array of extra Node()s hanging off this atom (not part of the main line) */
+function Node(el,h,groupId,opts){
+  opts = opts || {};
+  return { el, h, groupId, doubleBondO: !!opts.doubleBondO, tripleBondN: !!opts.tripleBondN, branches: opts.branches || [] };
+}
+
+/* =========================================================================
+   1. STRUCTURE RENDERER  (produces an SVG string for any compound)
+   ========================================================================= */
+const BOND = 56;           // px between consecutive backbone atoms
+const BRANCH_BOND = 42;    // px for branch stubs
+const ATOM_FS = 19;        // atom-letter font size
+const H_FS = 14;           // H-count label font size
+
+function colorOf(sigMap, groupId){
+  const s = sigMap[groupId];
+  return s ? s.color : '#aab4cc';
+}
+
+// step `count` points starting ONE bond-length away from (ox,oy) along angleDeg (0=right,-90=up,90=down)
+function stepPoints(ox,oy,angleDeg,count,bondLen){
+  const rad = angleDeg*Math.PI/180, dx=Math.cos(rad), dy=Math.sin(rad);
+  const pts=[]; let cx=ox, cy=oy;
+  for(let i=0;i<count;i++){ cx+=dx*bondLen; cy+=dy*bondLen; pts.push({x:cx,y:cy}); }
+  return pts;
+}
+
+function line(parts,x1,y1,x2,y2,extra){
+  parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${extra&&extra.stroke||'#8ea0c7'}" stroke-width="${extra&&extra.w||2}" ${extra&&extra.dash?'stroke-dasharray="'+extra.dash+'"':''}/>`);
+}
+
+function atomText(parts,x,y,el,opts){
+  opts=opts||{};
+  parts.push(`<text x="${x.toFixed(1)}" y="${(y+6.5).toFixed(1)}" text-anchor="middle" font-size="${ATOM_FS}" font-weight="700" fill="${opts.fill||'#eef3fd'}" font-family="Georgia,'Times New Roman',serif">${el}</text>`);
+}
+
+// draws a connector + "Hn" label at (x+dx, y+dy), colour-coded, and returns nothing
+function hLabel(parts,x,y,dx,dy,h,color,groupId,selClass){
+  const lx=x+dx, ly=y+dy;
+  const midx=x+dx*0.45, midy=y+dy*0.45;
+  line(parts, x,y, midx,midy, {stroke:color,w:1.6});
+  const txt = h>1 ? ('H'+sub(h)) : 'H';
+  parts.push(`<g class="hlabel ${selClass||''}" data-group="${groupId}" style="cursor:pointer;">`);
+  parts.push(`<circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="15" fill="${color}" fill-opacity="0.16" class="hhalo" data-group="${groupId}"/>`);
+  parts.push(`<text x="${lx.toFixed(1)}" y="${(ly+5).toFixed(1)}" text-anchor="middle" font-size="${H_FS}" font-weight="800" fill="${color}" data-group="${groupId}">${txt}</text>`);
+  parts.push(`</g>`);
+}
+
+function doubleBondO(parts,x,y,dirDeg){
+  // short C=O stub in direction dirDeg (default up, -90)
+  const rad=dirDeg*Math.PI/180, dx=Math.cos(rad), dy=Math.sin(rad);
+  const ex=x+dx*34, ey=y+dy*34;
+  const perpx=-dy, perpy=dx;
+  line(parts, x+perpx*3.5, y+perpy*3.5, ex+perpx*3.5, ey+perpy*3.5, {stroke:'#8ea0c7',w:1.8});
+  line(parts, x-perpx*3.5, y-perpy*3.5, ex-perpx*3.5, ey-perpy*3.5, {stroke:'#8ea0c7',w:1.8});
+  atomText(parts, x+dx*44, y+dy*44, 'O', {fill:'#aab4cc'});
+}
+
+function tripleBondN(parts,x,y,dirDeg){
+  const rad=dirDeg*Math.PI/180, dx=Math.cos(rad), dy=Math.sin(rad);
+  const ex=x+dx*34, ey=y+dy*34;
+  const perpx=-dy, perpy=dx;
+  [0,3.2,-3.2].forEach(off=>{
+    line(parts, x+perpx*off, y+perpy*off, ex+perpx*off, ey+perpy*off, {stroke:'#8ea0c7',w:1.6});
+  });
+  atomText(parts, x+dx*44, y+dy*44, 'N', {fill:'#aab4cc'});
+}
+
+// Draws one backbone atom (+ its H label + optional =O + optional branches) at (x,y).
+// labelSide: +1 (label below) / -1 (label above) / 'left' / 'right' — used for H label placement
+// when the node has NO branches. If it does have branches, the branches claim the "up" side
+// (or "down" if a C=O stub already occupies "up") and the node's own H label is placed opposite.
+function drawNode(parts, x, y, node, sigMap, labelSide, branchFanUpOverride, chainAxisDeg){
+  atomText(parts, x, y, node.el);
+  const hasBranches = node.branches.length>0;
+  let fanUp = branchFanUpOverride;
+  if(fanUp===undefined) fanUp = (node.doubleBondO || node.tripleBondN) ? false : true;
+
+  if(node.doubleBondO || node.tripleBondN){
+    // stub points perpendicular to the chain's own axis so it never sits on top of
+    // the bond to the next (or previous) backbone atom -- default axis is horizontal (0),
+    // so the stub defaults to straight up (-90), matching the original horizontal-chain look.
+    const stubDir = (chainAxisDeg===undefined ? 0 : chainAxisDeg) - 90;
+    if(node.doubleBondO) doubleBondO(parts, x, y, stubDir); else tripleBondN(parts, x, y, stubDir);
+    if(node.h>0){
+      const dy = (hasBranches && !fanUp) ? -32 : 32;
+      hLabel(parts, x, y, 0, dy, node.h, colorOf(sigMap,node.groupId), node.groupId);
+    }
+  } else if(node.h>0){
+    if(hasBranches){
+      const dy = fanUp ? 34 : -34;
+      hLabel(parts, x, y, 0, dy, node.h, colorOf(sigMap,node.groupId), node.groupId);
+    } else {
+      let dx=0, dy=34;
+      if(labelSide==='left'){ dx=-32; dy=0; }
+      else if(labelSide==='right'){ dx=32; dy=0; }
+      else { dy = labelSide<0 ? -34 : 34; }
+      hLabel(parts, x, y, dx, dy, node.h, colorOf(sigMap,node.groupId), node.groupId);
+    }
+  }
+  // branches fan outward from this node (up, or down if a C=O already occupies "up")
+  const n = node.branches.length;
+  if(n>0){
+    const angles = n===1?[-90] : n===2?[-125,-55] : n===3?[-150,-90,-30] : [-160,-120,-80,-40];
+    for(let i=0;i<n;i++){
+      const ang = fanUp ? angles[i] : -angles[i];
+      const pt = stepPoints(x,y,ang,1,BRANCH_BOND)[0];
+      line(parts, x,y, pt.x,pt.y, {stroke:'#8ea0c7',w:2});
+      const b = node.branches[i];
+      atomText(parts, pt.x, pt.y, b.el);
+      if(b.h>0){
+        const rad = ang*Math.PI/180;
+        hLabel(parts, pt.x, pt.y, Math.cos(rad)*30, Math.sin(rad)*30, b.h, colorOf(sigMap,b.groupId), b.groupId);
+      }
+    }
+  }
+}
+
+function buildSigMap(signals){ const m={}; signals.forEach(s=>m[s.groupId]=s); return m; }
+
+function renderChainSVG(backbone, sigMap){
+  const n = backbone.length;
+  const LRPAD = 110; // room for branches that fan out from the end atoms
+  const W = Math.max(320, LRPAD + (n-1)*BOND + LRPAD);
+  const H = 190;
+  const rowY = 100;
+  const startX = LRPAD;
+  const parts = [];
+  const pts = [{x:startX,y:rowY}].concat(stepPoints(startX, rowY, 0, n-1, BOND));
+  // bonds (only between real consecutive backbone atoms -- no phantom leading stub)
+  for(let i=0;i<n-1;i++){ line(parts, pts[i].x, pts[i].y, pts[i+1].x, pts[i+1].y, {stroke:'#8ea0c7',w:2}); }
+  // atoms
+  for(let i=0;i<n;i++){
+    const p = pts[i];
+    const side = (i%2===0) ? -1 : 1;
+    drawNode(parts, p.x, p.y, backbone[i], sigMap, side);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${Math.min(W,760)}" height="${H}" xmlns="http://www.w3.org/2000/svg">${parts.join('')}</svg>`;
+}
+
+function renderRingSVG(vertices, sigMap, opts){
+  opts = opts || {};
+  const cx=170, cy=190, R=58;
+  const parts = [];
+  const angles = [-90,-30,30,90,150,210];
+  const vpos = angles.map(a=>{ const r=a*Math.PI/180; return {x:cx+Math.cos(r)*R, y:cy+Math.sin(r)*R}; });
+  // hexagon
+  for(let i=0;i<6;i++){ const a=vpos[i], b=vpos[(i+1)%6]; line(parts,a.x,a.y,b.x,b.y,{stroke:'#8ea0c7',w:2}); }
+  parts.push(`<circle cx="${cx}" cy="${cy}" r="${R*0.62}" fill="none" stroke="#8ea0c7" stroke-width="1.6"/>`);
+
+  let maxTop=cy-R, maxBottom=cy+R;
+
+  for(let i=0;i<6;i++){
+    const v = vertices[i];
+    const p = vpos[i];
+    const ang = angles[i];
+    const rad = ang*Math.PI/180, ux=Math.cos(rad), uy=Math.sin(rad);
+    if(!v || v.type==='H'){
+      const groupId = v ? v.groupId : 'ar';
+      const ex=p.x+ux*34, ey=p.y+uy*34;
+      line(parts, p.x,p.y, ex,ey, {stroke:'#8ea0c7',w:1.8});
+      hLabel(parts, p.x, p.y, ux*34, uy*34, 1, colorOf(sigMap,groupId), groupId);
+      maxTop = Math.min(maxTop, ey-24); maxBottom = Math.max(maxBottom, ey+24);
+    } else if(v.type==='sub'){
+      // vertical substituent chain, upward from top-ish vertices, downward from bottom-ish vertices
+      const dirDeg = (ang <= -1) ? -90 : 90;
+      const chain = v.chain;
+      const pts = [p].concat(stepPoints(p.x, p.y, dirDeg, chain.length, BOND));
+      line(parts, p.x,p.y, pts[1].x,pts[1].y, {stroke:'#8ea0c7',w:2});
+      for(let k=0;k<chain.length;k++){
+        if(k>0) line(parts, pts[k].x,pts[k].y, pts[k+1].x,pts[k+1].y, {stroke:'#8ea0c7',w:2});
+        const side = (k%2===0)?'left':'right';
+        drawNode(parts, pts[k+1].x, pts[k+1].y, chain[k], sigMap, side, dirDeg<0, dirDeg);
+      }
+      const lastY = pts[chain.length].y;
+      if(dirDeg<0) maxTop = Math.min(maxTop, lastY-46); else maxBottom = Math.max(maxBottom, lastY+46);
+    }
+  }
+  const H = (maxBottom - maxTop) + 20;
+  const yShift = -maxTop + 10;
+  const wrapped = `<g transform="translate(0,${yShift.toFixed(1)})">${parts.join('')}</g>`;
+  const W = 340;
+  return `<svg viewBox="0 0 ${W} ${H.toFixed(0)}" width="${W}" height="${Math.min(H,420).toFixed(0)}" xmlns="http://www.w3.org/2000/svg">${wrapped}</svg>`;
+}
+
+/* =========================================================================
+   2. SPECTRUM RENDERER
+   ========================================================================= */
+// ppmToX takes an explicit [ppmLo,ppmHi] window so the axis can auto-zoom to each compound's signals,
+// the same way a real NMR workstation shows a zoomed region rather than a fixed 0-12ppm scale.
+function ppmToX(ppm, marginL, plotW, ppmLo, ppmHi){ return marginL + (ppmHi-ppm)/(ppmHi-ppmLo)*plotW; }
+
+// Interval-scheduling stagger: given items with {left,right}, assigns a .level (0,1,2,...)
+// to each so that no two items sharing a level have overlapping [left,right] ranges.
+// Returns the maximum level used (0 if nothing overlaps).
+function assignLevels(items, gap){
+  gap = gap===undefined ? 6 : gap;
+  const sorted = items.slice().sort((a,b)=>a.left-b.left);
+  const lastRight = [];
+  let maxLevel = 0;
+  sorted.forEach(it=>{
+    let lvl=0;
+    while(lastRight[lvl]!==undefined && it.left < lastRight[lvl]+gap){ lvl++; }
+    it.level = lvl;
+    lastRight[lvl] = it.right;
+    if(lvl>maxLevel) maxLevel=lvl;
+  });
+  return maxLevel;
+}
+
+// Picks a "nice" axis tick step so a zoomed-in window still gets a sensible number of gridlines
+// (mirrors how real simulators show 0.5 / 0.2ppm ticks once you zoom into a narrow region).
+function pickTickStep(span){
+  if(span<=1.4) return 0.1;
+  if(span<=2.6) return 0.2;
+  if(span<=4.5) return 0.5;
+  if(span<=8)   return 1;
+  return 2;
+}
+
+function renderSpectrumSVG(signals){
+  const W=900;
+  const marginL=36, marginR=36, plotW=W-marginL-marginR;
+  const TAG_ROW=14, BRACKET_ROW=30;
+  const parts=[];
+
+  // ---- auto-zoom the ppm axis to the window the signals actually occupy, instead of a fixed 0-12ppm
+  //      scale -- this is what makes closely-grouped signals spread out to use the full plot width,
+  //      exactly like a real instrument's software looks once you zoom into the crowded region. ----
+  const deltas = signals.map(s=>s.delta);
+  const dMin = Math.min(...deltas), dMax = Math.max(...deltas);
+  const rawSpan = Math.max(0.01, dMax-dMin);
+  const pad = Math.max(0.45, rawSpan*0.22);
+  let ppmHi = dMax + pad, ppmLo = dMin - pad;
+  const MIN_SPAN = 1.3;
+  if(ppmHi-ppmLo < MIN_SPAN){ const mid=(ppmHi+ppmLo)/2; ppmHi=mid+MIN_SPAN/2; ppmLo=mid-MIN_SPAN/2; }
+  if(ppmLo < -0.3){ ppmHi += (-0.3-ppmLo); ppmLo = -0.3; }
+  const axisSpan = ppmHi-ppmLo;
+  const pxPerPpm = plotW/axisSpan;
+  const X = (ppm)=> ppmToX(ppm, marginL, plotW, ppmLo, ppmHi);
+
+  // ---- resolve near-identical / coincident chemical shifts into visually distinct cluster
+  //      centers. Two different proton environments sometimes land at (almost) the exact same
+  //      δ -- without this, their peak clusters would be drawn literally on top of each other
+  //      and look like a single blob instead of two signals. The axis ticks keep showing the
+  //      TRUE δ scale; only the drawn centre of each cluster is nudged apart in pixel space,
+  //      and only by as much as is actually needed. ----
+  const MIN_CENTER_GAP = 34;
+  const order = signals.map((s,i)=>i).sort((a,b)=> X(signals[a].delta) - X(signals[b].delta));
+  const resolved = order.map(i=> X(signals[i].delta));
+  for(let k=1;k<resolved.length;k++){ if(resolved[k]-resolved[k-1] < MIN_CENTER_GAP) resolved[k]=resolved[k-1]+MIN_CENTER_GAP; }
+  for(let k=resolved.length-2;k>=0;k--){ if(resolved[k+1]-resolved[k] < MIN_CENTER_GAP) resolved[k]=resolved[k+1]-MIN_CENTER_GAP; }
+  const centerPx = new Array(signals.length);
+  order.forEach((origIdx,k)=>{ centerPx[origIdx] = resolved[k]; });
+  // per-signal gap to its nearest resolved neighbour -- caps how wide its own fine-structure fan may be,
+  // so two nudged-apart clusters never grow wide enough to touch each other again.
+  const neighborGap = new Array(signals.length).fill(Infinity);
+  order.forEach((origIdx,k)=>{
+    let g = Infinity;
+    if(k>0) g = Math.min(g, resolved[k]-resolved[k-1]);
+    if(k<resolved.length-1) g = Math.min(g, resolved[k+1]-resolved[k]);
+    neighborGap[origIdx] = g;
+  });
+
+  // ---- compute raw (unscaled) line heights for every signal, using a tight, constant PIXEL gap
+  //      between fine-structure lines (capped by the room available before the nearest neighbour)
+  //      so a multiplet always reads as one compact cluster no matter how zoomed-in/out the axis
+  //      is, and never visually merges into a neighbouring signal's cluster. ----
+  const built = signals.map((sig,idx)=>{
+    const cx = centerPx[idx];
+    const widthCap = Math.max(8, Math.min(46, isFinite(neighborGap[idx]) ? neighborGap[idx]*0.6 : 46));
+    let lines; // [{x, h}], h = relative (unscaled) height, x = absolute pixel position
+    if(sig.abbr==='m'){
+      const pattern=[0.55,0.85,1,0.78,0.5,0.3];
+      const gapPx = Math.min(6, widthCap/(pattern.length-1));
+      lines = pattern.map((h,i)=>({ x: cx + (i-2.5)*gapPx, h: h*sig.integration }));
+    } else if(sig.broad){
+      lines = [{ x: cx, h: sig.integration, wide:true }];
+    } else {
+      const row = pascalRow(sig.n||0);
+      const n = row.length;
+      if(n===1){
+        lines = [{x:cx, h:row[0]*sig.integration}];
+      } else {
+        const gapPx = Math.min(6, widthCap/(n-1));
+        lines = row.map((h,i)=>({ x: cx + (i-(n-1)/2)*gapPx, h: h*sig.integration }));
+      }
+    }
+    return {sig, lines, cx};
+  });
+  let maxH=1;
+  built.forEach(b=> b.lines.forEach(l=> { if(l.h>maxH) maxH=l.h; }));
+
+  // ---- figure out multiplicity-tag collisions (horizontal text overlap) ----
+  built.forEach(b=>{
+    const tallest = b.lines.reduce((a,c)=>c.h>a.h?c:a, b.lines[0]);
+    b.tallest = tallest;
+    b.tx = tallest.x;
+    const txt = b.sig.abbr + (b.sig.broad?' (br)':'');
+    const halfW = Math.max(9, txt.length*3.4) + 5;
+    b.tagLeft = b.tx-halfW; b.tagRight = b.tx+halfW;
+  });
+  let maxTagLevel = 0;
+  (function(){
+    const wrappers = built.map(b=>({left:b.tagLeft,right:b.tagRight,b}));
+    maxTagLevel = assignLevels(wrappers);
+    wrappers.forEach(w=> w.b.tagLevel = w.level);
+  })();
+
+  // ---- figure out integration-bracket collisions (horizontal overlap of the bracket itself) ----
+  built.forEach(b=>{
+    const xs = b.lines.map(l=>l.x);
+    let xL = Math.min(...xs)-9, xR = Math.max(...xs)+9;
+    const minHalf = 11;
+    if(xR-xL < minHalf*2){ const c=(xL+xR)/2; xL=c-minHalf; xR=c+minHalf; }
+    b.xL = xL; b.xR = xR;
+  });
+  let maxBracketLevel = 0;
+  (function(){
+    const wrappers = built.map(b=>({left:b.xL-4,right:b.xR+4,b}));
+    maxBracketLevel = assignLevels(wrappers);
+    wrappers.forEach(w=> w.b.bracketLevel = w.level);
+  })();
+
+  // ---- vertical layout: reserve extra room at top for stacked tags, extra room at bottom for stacked brackets ----
+  const extraTop = maxTagLevel * TAG_ROW;
+  const topY = 26 + extraTop;
+  const baseline = 238 + extraTop;
+  const scale = (baseline-topY-18) / maxH;
+  const by0 = baseline + 54;
+  const H = by0 + maxBracketLevel*BRACKET_ROW + 35;
+
+  // ---- axis (tick step adapts to how zoomed-in the auto-fit window is) ----
+  const step = pickTickStep(axisSpan);
+  const decimals = step < 1 ? 1 : 0;
+  parts.push(`<line x1="${marginL}" y1="${baseline}" x2="${marginL+plotW}" y2="${baseline}" stroke="#8ea0c7" stroke-width="1.6"/>`);
+  const tickStart = Math.ceil(ppmLo/step)*step;
+  for(let p=tickStart; p<=ppmHi+1e-6; p+=step){
+    const x=X(p);
+    parts.push(`<line x1="${x.toFixed(1)}" y1="${baseline}" x2="${x.toFixed(1)}" y2="${baseline+5}" stroke="#5d6b8c" stroke-width="1.2"/>`);
+    parts.push(`<text x="${x.toFixed(1)}" y="${baseline+19}" text-anchor="middle" font-size="11" fill="#93a1c2">${p.toFixed(decimals)}</text>`);
+  }
+  parts.push(`<text x="${(marginL+plotW/2).toFixed(1)}" y="${baseline+36}" text-anchor="middle" font-size="12" fill="#c3cde6" font-weight="600">chemical shift (δ), ppm</text>`);
+  if(ppmLo<=0.35){ parts.push(`<text x="${(marginL+plotW+2).toFixed(1)}" y="${(baseline-6).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#6fd6b4" font-weight="700">TMS→0</text>`); }
+  parts.push(`<text x="${marginL}" y="18" text-anchor="start" font-size="10.5" fill="#ff9f9f">◀ Downfield (deshielded)</text>`);
+  parts.push(`<text x="${(marginL+plotW)}" y="18" text-anchor="end" font-size="10.5" fill="#8fd6c4">Upfield (shielded) ▶</text>`);
+
+  // ---- peaks ----
+  built.forEach(b=>{
+    const sig=b.sig;
+    const xs = b.lines.map(l=>l.x);
+    const xMin=Math.min(...xs), xMax=Math.max(...xs);
+    parts.push(`<g class="spec-group" data-group="${sig.groupId}" style="cursor:pointer;">`);
+    parts.push(`<rect class="spec-hit" data-group="${sig.groupId}" x="${(xMin-14).toFixed(1)}" y="${topY}" width="${(xMax-xMin+28).toFixed(1)}" height="${(baseline-topY)}" fill="transparent"/>`);
+    b.lines.forEach(l=>{
+      const x=l.x;
+      const h=Math.max(6,l.h*scale);
+      const w = l.wide ? 7 : 2.4;
+      parts.push(`<line class="spec-line" data-group="${sig.groupId}" x1="${x.toFixed(1)}" y1="${baseline}" x2="${x.toFixed(1)}" y2="${(baseline-h).toFixed(1)}" stroke="${sig.color}" stroke-width="${w}" stroke-linecap="round" opacity="0.92"/>`);
+    });
+    // multiplicity tag above tallest line, staggered upward when it would collide with a neighbour's tag
+    const tallest = b.tallest;
+    const tx = b.tx;
+    const ty = Math.max(30, baseline - tallest.h*scale - 10 - b.tagLevel*TAG_ROW);
+    parts.push(`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="${sig.color}">${esc(sig.abbr)}${sig.broad?' (br)':''}</text>`);
+    // integration bracket + label, staggered downward when it would collide with a neighbour's bracket
+    const xL=b.xL, xR=b.xR;
+    const by=by0 + b.bracketLevel*BRACKET_ROW;
+    parts.push(`<line x1="${xL.toFixed(1)}" y1="${(by-6).toFixed(1)}" x2="${xL.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${sig.color}" stroke-width="1.6"/>`);
+    parts.push(`<line x1="${xR.toFixed(1)}" y1="${(by-6).toFixed(1)}" x2="${xR.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${sig.color}" stroke-width="1.6"/>`);
+    parts.push(`<line x1="${xL.toFixed(1)}" y1="${by.toFixed(1)}" x2="${xR.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${sig.color}" stroke-width="1.6"/>`);
+    parts.push(`<text x="${((xL+xR)/2).toFixed(1)}" y="${(by+15).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${sig.color}">${sig.integration}H</text>`);
+    parts.push(`</g>`);
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${parts.join('')}</svg>`;
+}
+
+function renderStructure(compound){
+  const sigMap = buildSigMap(compound.signals);
+  if(compound.structure.type==='chain'){
+    return renderChainSVG(compound.structure.backbone, sigMap);
+  } else if(compound.structure.type==='ring'){
+    return renderRingSVG(compound.structure.vertices, sigMap);
+  }
+  return '<svg></svg>';
+}
+
+/* =========================================================================
+   3. COMPOUND LIBRARY  (hand-verified against the shift/splitting rules above)
+   ========================================================================= */
+const C0=COLORS[0],C1=COLORS[1],C2=COLORS[2],C3=COLORS[3],C4=COLORS[4],C5=COLORS[5];
+const ARH=[{type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'}];
+
+const LIBRARY = [
+
+/* ---------- Alkanes ---------- */
+{ id:'methane', name:'Methane', formula:'CH₄', category:'Alkanes',
+  structure:{type:'chain', backbone:[ Node('C',4,'a') ]},
+  signals:[ Sig('a','CH₄',0.9,0,4,C0) ] },
+
+{ id:'ethane', name:'Ethane', formula:'CH₃CH₃', category:'Alkanes',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',3,'a') ]},
+  signals:[ Sig('a','CH₃ (×2, equivalent)',0.9,0,6,C0) ] },
+
+{ id:'propane', name:'Propane', formula:'CH₃CH₂CH₃', category:'Alkanes',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',3,'a') ]},
+  signals:[ Sig('a','CH₃ (×2)',0.9,2,6,C0), Sig('b','CH₂',1.3,6,2,C1) ] },
+
+{ id:'butane', name:'n-Butane', formula:'CH₃CH₂CH₂CH₃', category:'Alkanes',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',2,'b'), Node('C',3,'a') ]},
+  signals:[ Sig('a','CH₃ (×2)',0.9,2,6,C0), Sig('b','CH₂ (×2)',1.3,5,4,C1) ] },
+
+{ id:'isobutane', name:'Isobutane', formula:'(CH₃)₃CH', category:'Alkanes',
+  structure:{type:'chain', backbone:[ Node('C',1,'b',{branches:[Node('C',3,'a'),Node('C',3,'a'),Node('C',3,'a')]}) ]},
+  signals:[ Sig('a','CH₃ (×3)',0.9,1,9,C0), Sig('b','CH',1.5,9,1,C1) ] },
+
+{ id:'cyclohexane', name:'Cyclohexane', formula:'C₆H₁₂', category:'Alkanes',
+  structure:{type:'chain', backbone:[ Node('C',2,'a'), Node('C',2,'a'), Node('C',2,'a'), Node('C',2,'a'), Node('C',2,'a'), Node('C',2,'a') ]},
+  signals:[ Sig('a','CH₂ (×6, ring)',1.4,0,12,C0,{note:'All 12 H equivalent on the NMR timescale (fast ring-flip).'}) ] },
+
+/* ---------- Alcohols & Ethers ---------- */
+{ id:'methanol', name:'Methanol', formula:'CH₃OH', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('O',1,'b') ]},
+  signals:[ Sig('a','CH₃',3.3,0,3,C0), Sig('b','OH',2.5,0,1,C1,{broad:true}) ] },
+
+{ id:'ethanol', name:'Ethanol', formula:'CH₃CH₂OH', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('O',1,'c') ]},
+  signals:[ Sig('a','CH₃',1.2,2,3,C0), Sig('b','CH₂',3.6,3,2,C1), Sig('c','OH',2.6,0,1,C2,{broad:true}) ] },
+
+{ id:'propan1ol', name:'Propan-1-ol', formula:'CH₃CH₂CH₂OH', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',2,'c'), Node('O',1,'d') ]},
+  signals:[ Sig('a','CH₃',0.9,2,3,C0), Sig('b','CH₂ (middle)',1.55,5,2,C1), Sig('c','CH₂–O',3.55,2,2,C2), Sig('d','OH',2.5,0,1,C3,{broad:true}) ] },
+
+{ id:'propan2ol', name:'Propan-2-ol (Isopropanol)', formula:'(CH₃)₂CHOH', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',1,'b',{branches:[Node('C',3,'a'),Node('C',3,'a')]}), Node('O',1,'c') ]},
+  signals:[ Sig('a','CH₃ (×2)',1.15,1,6,C0), Sig('b','CH',3.9,6,1,C1), Sig('c','OH',2.6,0,1,C2,{broad:true}) ] },
+
+{ id:'tbutanol', name:'tert-Butanol', formula:'(CH₃)₃COH', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',0,null,{branches:[Node('C',3,'a'),Node('C',3,'a'),Node('C',3,'a')]}), Node('O',1,'b') ]},
+  signals:[ Sig('a','CH₃ (×3)',1.2,0,9,C0), Sig('b','OH',2.3,0,1,C1,{broad:true}) ] },
+
+{ id:'diethylether', name:'Diethyl ether', formula:'(CH₃CH₂)₂O', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('O',0,null), Node('C',2,'b'), Node('C',3,'a') ]},
+  signals:[ Sig('a','CH₃ (×2)',1.2,2,6,C0), Sig('b','CH₂ (×2)',3.4,3,4,C1) ] },
+
+{ id:'dimethylether', name:'Dimethyl ether', formula:'CH₃OCH₃', category:'Alcohols & Ethers',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('O',0,null), Node('C',3,'a') ]},
+  signals:[ Sig('a','CH₃ (×2)',3.2,0,6,C0) ] },
+
+/* ---------- Aldehydes & Ketones ---------- */
+{ id:'acetaldehyde', name:'Acetaldehyde', formula:'CH₃CHO', category:'Aldehydes & Ketones',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',1,'b',{doubleBondO:true}) ]},
+  signals:[ Sig('a','CH₃',2.2,1,3,C0), Sig('b','CHO',9.7,3,1,C1) ] },
+
+{ id:'propanal', name:'Propanal', formula:'CH₃CH₂CHO', category:'Aldehydes & Ketones',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',1,'c',{doubleBondO:true}) ]},
+  signals:[ Sig('a','CH₃',1.1,2,3,C0), Sig('b','CH₂',2.4,4,2,C1), Sig('c','CHO',9.7,2,1,C2) ] },
+
+{ id:'acetone', name:'Acetone', formula:'(CH₃)₂CO', category:'Aldehydes & Ketones',
+  structure:{type:'chain', backbone:[ Node('C',0,null,{doubleBondO:true, branches:[Node('C',3,'a'),Node('C',3,'a')]}) ]},
+  signals:[ Sig('a','CH₃ (×2)',2.1,0,6,C0) ] },
+
+{ id:'butanone', name:'Butan-2-one (MEK)', formula:'CH₃COCH₂CH₃', category:'Aldehydes & Ketones',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',0,null,{doubleBondO:true}), Node('C',2,'b'), Node('C',3,'c') ]},
+  signals:[ Sig('a','CH₃–CO',2.1,0,3,C0), Sig('b','CH₂',2.45,3,2,C1), Sig('c','CH₂–CH₃',1.05,2,3,C2) ] },
+
+/* ---------- Carboxylic Acids & Esters ---------- */
+{ id:'aceticacid', name:'Acetic acid', formula:'CH₃COOH', category:'Carboxylic Acids & Esters',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',0,null,{doubleBondO:true}), Node('O',1,'b') ]},
+  signals:[ Sig('a','CH₃',2.1,0,3,C0), Sig('b','COOH',11.5,0,1,C1,{broad:true}) ] },
+
+{ id:'propanoicacid', name:'Propanoic acid', formula:'CH₃CH₂COOH', category:'Carboxylic Acids & Esters',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',0,null,{doubleBondO:true}), Node('O',1,'c') ]},
+  signals:[ Sig('a','CH₃',1.1,2,3,C0), Sig('b','CH₂',2.3,3,2,C1), Sig('c','COOH',11.8,0,1,C2,{broad:true}) ] },
+
+{ id:'methylacetate', name:'Methyl acetate', formula:'CH₃COOCH₃', category:'Carboxylic Acids & Esters',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',0,null,{doubleBondO:true}), Node('O',0,null), Node('C',3,'b') ]},
+  signals:[ Sig('a','CH₃–CO',2.05,0,3,C0), Sig('b','O–CH₃',3.65,0,3,C1) ] },
+
+{ id:'ethylacetate', name:'Ethyl acetate', formula:'CH₃COOCH₂CH₃', category:'Carboxylic Acids & Esters',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',0,null,{doubleBondO:true}), Node('O',0,null), Node('C',2,'b'), Node('C',3,'c') ]},
+  signals:[ Sig('a','CH₃–CO',2.0,0,3,C0), Sig('b','O–CH₂',4.1,3,2,C1), Sig('c','CH₂–CH₃',1.25,2,3,C2) ] },
+
+/* ---------- Haloalkanes ---------- */
+{ id:'chloromethane', name:'Chloromethane', formula:'CH₃Cl', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('Cl',0,null) ]},
+  signals:[ Sig('a','CH₃',3.0,0,3,C0) ] },
+
+{ id:'dichloromethane', name:'Dichloromethane', formula:'CH₂Cl₂', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('Cl',0,null), Node('C',2,'a'), Node('Cl',0,null) ]},
+  signals:[ Sig('a','CH₂',5.3,0,2,C0) ] },
+
+{ id:'chloroform', name:'Chloroform', formula:'CHCl₃', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('Cl',0,null), Node('C',1,'a'), Node('Cl',0,null), ], },
+  signals:[ Sig('a','CH',7.3,0,1,C0) ] },
+
+{ id:'chloropropane1', name:'1-Chloropropane', formula:'CH₃CH₂CH₂Cl', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',2,'c'), Node('Cl',0,null) ]},
+  signals:[ Sig('a','CH₃',1.0,2,3,C0), Sig('b','CH₂ (middle)',1.8,5,2,C1), Sig('c','CH₂–Cl',3.5,2,2,C2) ] },
+
+{ id:'chloropropane2', name:'2-Chloropropane (Isopropyl chloride)', formula:'(CH₃)₂CHCl', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('C',1,'b',{branches:[Node('C',3,'a'),Node('C',3,'a')]}), Node('Cl',0,null) ]},
+  signals:[ Sig('a','CH₃ (×2)',1.5,1,6,C0), Sig('b','CH',4.0,6,1,C1) ] },
+
+{ id:'bromoethane', name:'Bromoethane', formula:'CH₃CH₂Br', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('Br',0,null) ]},
+  signals:[ Sig('a','CH₃',1.7,2,3,C0), Sig('b','CH₂–Br',3.4,3,2,C1) ] },
+
+{ id:'dichloroethane12', name:'1,2-Dichloroethane', formula:'ClCH₂CH₂Cl', category:'Haloalkanes',
+  structure:{type:'chain', backbone:[ Node('Cl',0,null), Node('C',2,'a'), Node('C',2,'a'), Node('Cl',0,null) ]},
+  signals:[ Sig('a','CH₂ (×2, equivalent)',3.7,0,4,C0) ] },
+
+/* ---------- Amines & Nitriles ---------- */
+{ id:'methylamine', name:'Methylamine', formula:'CH₃NH₂', category:'Amines & Nitriles',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('N',2,'b') ]},
+  signals:[ Sig('a','CH₃',2.4,0,3,C0), Sig('b','NH₂',1.0,0,2,C1,{broad:true}) ] },
+
+{ id:'ethylamine', name:'Ethylamine', formula:'CH₃CH₂NH₂', category:'Amines & Nitriles',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('N',2,'c') ]},
+  signals:[ Sig('a','CH₃',1.1,2,3,C0), Sig('b','CH₂',2.7,3,2,C1), Sig('c','NH₂',1.3,0,2,C2,{broad:true}) ] },
+
+{ id:'acetonitrile', name:'Acetonitrile', formula:'CH₃CN', category:'Amines & Nitriles',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',0,null,{tripleBondN:true}) ]},
+  signals:[ Sig('a','CH₃',2.0,0,3,C0) ] },
+
+{ id:'propanenitrile', name:'Propanenitrile', formula:'CH₃CH₂CN', category:'Amines & Nitriles',
+  structure:{type:'chain', backbone:[ Node('C',3,'a'), Node('C',2,'b'), Node('C',0,null,{tripleBondN:true}) ]},
+  signals:[ Sig('a','CH₃',1.3,2,3,C0), Sig('b','CH₂',2.4,3,2,C1) ] },
+
+/* ---------- Aromatics ---------- */
+{ id:'benzene', name:'Benzene', formula:'C₆H₆', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'},{type:'H',groupId:'a'} ]},
+  signals:[ Sig('a','Ar–H (×6)',7.36,0,6,C0) ] },
+
+{ id:'toluene', name:'Toluene', formula:'C₆H₅CH₃', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('C',3,'b')]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',7.2,null,5,C0,{mult:'Multiplet',abbr:'m'}), Sig('b','CH₃',2.35,0,3,C1) ] },
+
+{ id:'chlorobenzene', name:'Chlorobenzene', formula:'C₆H₅Cl', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('Cl',0,null)]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',7.3,null,5,C0,{mult:'Multiplet',abbr:'m'}) ] },
+
+{ id:'phenol', name:'Phenol', formula:'C₆H₅OH', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('O',1,'b')]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',6.9,null,5,C0,{mult:'Multiplet',abbr:'m'}), Sig('b','OH',5.5,0,1,C1,{broad:true}) ] },
+
+{ id:'aniline', name:'Aniline', formula:'C₆H₅NH₂', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('N',2,'b')]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',6.8,null,5,C0,{mult:'Multiplet',abbr:'m'}), Sig('b','NH₂',3.5,0,2,C1,{broad:true}) ] },
+
+{ id:'benzylalcohol', name:'Benzyl alcohol', formula:'C₆H₅CH₂OH', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('C',2,'b'),Node('O',1,'c')]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',7.3,null,5,C0,{mult:'Multiplet',abbr:'m'}), Sig('b','CH₂',4.6,0,2,C1), Sig('c','OH',2.3,0,1,C2,{broad:true}) ] },
+
+{ id:'benzaldehyde', name:'Benzaldehyde', formula:'C₆H₅CHO', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('C',1,'b',{doubleBondO:true})]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',7.6,null,5,C0,{mult:'Multiplet',abbr:'m'}), Sig('b','CHO',10.0,0,1,C1) ] },
+
+{ id:'acetophenone', name:'Acetophenone', formula:'C₆H₅COCH₃', category:'Aromatics',
+  structure:{type:'ring', vertices:[ {type:'sub', chain:[Node('C',0,null,{doubleBondO:true}),Node('C',3,'b')]} ].concat(ARH)},
+  signals:[ Sig('a','Ar–H (×5, ring)',7.6,null,5,C0,{mult:'Multiplet',abbr:'m'}), Sig('b','CH₃',2.6,0,3,C1) ] },
+
+/* ---------- Drug molecules ---------- */
+{ id:'aspirin', name:'Aspirin (Acetylsalicylic acid)', formula:'C₉H₈O₄', category:'Drug Molecules',
+  structure:{type:'ring', vertices:[
+      {type:'sub', chain:[Node('O',0,null),Node('C',0,null,{doubleBondO:true}),Node('C',3,'b')]},
+      {type:'H',groupId:'a'},{type:'H',groupId:'a'},
+      {type:'sub', chain:[Node('C',0,null,{doubleBondO:true}),Node('O',1,'c')]},
+      {type:'H',groupId:'a'},{type:'H',groupId:'a'}
+  ]},
+  signals:[ Sig('a','Ar–H (×4, ring — positions simplified)',7.5,null,4,C0,{mult:'Multiplet',abbr:'m'}),
+            Sig('b','O–CO–CH₃',2.3,0,3,C1), Sig('c','COOH',11.8,0,1,C2,{broad:true}) ],
+  caption:'Ring substituent positions drawn opposite each other for diagram clarity — aspirin is actually ortho (1,2) substituted.' },
+
+{ id:'paracetamol', name:'Paracetamol (Acetaminophen)', formula:'C₈H₉NO₂', category:'Drug Molecules',
+  structure:{type:'ring', vertices:[
+      {type:'sub', chain:[Node('O',1,'d')]},
+      {type:'H',groupId:'a'},{type:'H',groupId:'a'},
+      {type:'sub', chain:[Node('N',1,'e'),Node('C',0,null,{doubleBondO:true}),Node('C',3,'c')]},
+      {type:'H',groupId:'b'},{type:'H',groupId:'b'}
+  ]},
+  signals:[ Sig('a','Ar–H ortho to OH (×2)',6.7,null,2,C0,{mult:'Doublet (AA’BB’)',abbr:'d'}),
+            Sig('b','Ar–H ortho to NH (×2)',7.35,null,2,C1,{mult:'Doublet (AA’BB’)',abbr:'d'}),
+            Sig('c','CO–CH₃',2.05,0,3,C2),
+            Sig('d','OH',9.1,0,1,C3,{broad:true}),
+            Sig('e','NH',9.6,0,1,C4,{broad:true}) ],
+  caption:'Para-substituted ring gives two symmetric 2H "doublets" (simplified AA’BB’ pattern), as commonly taught at this level.' },
+
+];
+
+const BUILDER_GROUPS = [
+  { id:'none', label:'— none (alkane, R–H)', className:'Alkane' },
+  { id:'oh',   label:'–OH  (alcohol)', className:'Alcohol' },
+  { id:'cl',   label:'–Cl  (chloro)', className:'Haloalkane' },
+  { id:'br',   label:'–Br  (bromo)', className:'Haloalkane' },
+  { id:'nh2',  label:'–NH₂  (amine)', className:'Amine' },
+  { id:'cho',  label:'–CHO  (aldehyde)', minLen:2, className:'Aldehyde' },
+  { id:'cooh', label:'–COOH  (carboxylic acid)', minLen:2, className:'Carboxylic acid' },
+  { id:'cn',   label:'–C≡N  (nitrile)', minLen:2, className:'Nitrile' },
+];
+
+/* =========================================================================
+   4. BUILD-YOUR-OWN  (straight unbranched chain, functional group at the right end)
+   ========================================================================= */
+const ALPHA_BETA = {
+  oh:  {alpha:3.5,  beta:1.55},
+  cl:  {alpha:3.4,  beta:1.6},
+  br:  {alpha:3.3,  beta:1.65},
+  nh2: {alpha:2.7,  beta:1.45},
+  cho: {alpha:2.4,  beta:1.55},
+  cooh:{alpha:2.35, beta:1.55},
+  cn:  {alpha:2.3,  beta:1.6},
+};
+
+function labelForNode(node){
+  if(node.el==='O') return node.h===1?'OH':'O';
+  if(node.el==='N') return node.h===2?'NH₂':(node.h===1?'NH':'N');
+  if(node.doubleBondO && node.h===1) return 'CHO';
+  if(node.doubleBondO && node.h===0) return 'C=O';
+  if(node.tripleBondN) return 'C≡N';
+  if(node.el==='Cl') return 'Cl';
+  if(node.el==='Br') return 'Br';
+  if(node.h===0) return 'C';
+  if(node.h===1) return 'CH';
+  if(node.h===2) return 'CH₂';
+  if(node.h===3) return 'CH₃';
+  if(node.h===4) return 'CH₄';
+  return 'C';
+}
+function fragForNode(node){
+  if(node.el==='O') return node.h===1?'OH':'O';
+  if(node.el==='N') return node.h===2?'NH2':(node.h===1?'NH':'N');
+  if(node.el==='Cl') return 'Cl';
+  if(node.el==='Br') return 'Br';
+  if(node.doubleBondO && node.h===1) return 'CHO';
+  if(node.doubleBondO && node.h===0) return 'CO';
+  if(node.tripleBondN) return 'CN';
+  if(node.h===0) return 'C';
+  if(node.h===1) return 'CH';
+  if(node.h===2) return 'CH2';
+  if(node.h===3) return 'CH3';
+  if(node.h===4) return 'CH4';
+  return 'C';
+}
+
+function buildBackboneNodes(L, groupId){
+  const nodes = [];
+  for(let i=0;i<L;i++) nodes.push(Node('C',2,'g'+i));
+  nodes[0] = Node('C',3,'g0');
+  const lastI = L-1, lastGid='g'+lastI;
+
+  if(groupId==='none'){
+    // mirror symmetry: position i and its mirror (L-1-i) are the same environment
+    const out = new Array(L);
+    for(let i=0;i<L;i++){
+      const mirror=L-1-i, gid='g'+Math.min(i,mirror);
+      const h=(i===0||i===L-1)?(L===1?4:3):2;
+      out[i]=Node('C',h,gid);
+    }
+    return out;
+  }
+  if(groupId==='oh' || groupId==='nh2'){
+    const el = groupId==='oh'?'O':'N', hc = groupId==='oh'?1:2;
+    nodes[lastI] = Node('C', L===1?3:2, lastGid);
+    nodes.push(Node(el,hc,'g'+L));
+    return nodes;
+  }
+  if(groupId==='cl' || groupId==='br'){
+    const el = groupId==='cl'?'Cl':'Br';
+    nodes[lastI] = Node('C', L===1?3:2, lastGid);
+    nodes.push(Node(el,0,null));
+    return nodes;
+  }
+  if(groupId==='cho'){ nodes[lastI]=Node('C',1,lastGid,{doubleBondO:true}); return nodes; }
+  if(groupId==='cooh'){ nodes[lastI]=Node('C',0,null,{doubleBondO:true}); nodes.push(Node('O',1,'g'+L)); return nodes; }
+  if(groupId==='cn'){ nodes[lastI]=Node('C',0,null,{tripleBondN:true}); return nodes; }
+  return nodes;
+}
+
+// Attach a reference shift to every H-bearing backbone carbon (heteroatom / CHO / COOH signals get fixed shifts).
+function assignShifts(nodes, L, groupId){
+  const shiftMap = {};
+  if(groupId==='none'){
+    for(let i=0;i<L;i++){
+      const n=nodes[i]; if(!n.groupId) continue;
+      shiftMap[n.groupId] = (i===0||i===L-1) ? 0.9 : 1.3;
+    }
+    return shiftMap;
+  }
+  const ab = ALPHA_BETA[groupId];
+  const isCarbonylType = (groupId==='cho'||groupId==='cooh'||groupId==='cn');
+  for(let i=0;i<L;i++){
+    const n = nodes[i];
+    if(!n || !n.groupId) continue;
+    if(isCarbonylType){
+      if(i===L-1){ shiftMap[n.groupId] = (groupId==='cho') ? 9.7 : null; continue; } // the carbonyl/nitrile carbon's own signal
+      const d = (L-2) - i; // distance from the carbon directly bonded to the carbonyl/nitrile carbon
+      shiftMap[n.groupId] = (d===0) ? ab.alpha : ((i===0) ? 0.9 : 1.3); // only the alpha carbon is noticeably shifted
+    } else {
+      const d = (L-1) - i; // distance from the heteroatom-bearing carbon itself
+      if(d===0) shiftMap[n.groupId]=ab.alpha;
+      else if(d===1) shiftMap[n.groupId]=ab.beta;
+      else shiftMap[n.groupId]= (i===0) ? 0.9 : 1.3;
+    }
+  }
+  // heteroatom / extra appended signal (OH, NH2, COOH's OH)
+  const extra = nodes[nodes.length-1];
+  if(extra && (extra.el==='O'||extra.el==='N') && extra.groupId){
+    if(groupId==='oh') shiftMap[extra.groupId]=2.5;
+    else if(groupId==='nh2') shiftMap[extra.groupId]=1.3;
+    else if(groupId==='cooh') shiftMap[extra.groupId]=11.6;
+  }
+  return shiftMap;
+}
+
+function buildCompoundLabel(nodes, L, groupId){
+  const formula = nodes.map(fragForNode).join('');
+  const names = {none:'Alkane',oh:'Primary alcohol',cl:'Chloroalkane',br:'Bromoalkane',nh2:'Primary amine',cho:'Aldehyde',cooh:'Carboxylic acid',cn:'Nitrile'};
+  return { formula, name: (names[groupId]||'Compound') + ' — ' + L + '-carbon chain' };
+}
+
+function generateBuilderCompound(L, groupId){
+  const nodes = buildBackboneNodes(L, groupId);
+  const shiftMap = assignShifts(nodes, L, groupId);
+  const sigs = [];
+  let colorIdx = 0;
+  const seenGid = {};
+  for(let i=0;i<nodes.length;i++){
+    const node = nodes[i];
+    if(!node.groupId || node.h<=0) continue;
+    if(seenGid[node.groupId]){ seenGid[node.groupId].integration += node.h; continue; }
+    const exchangeable = (node.el==='O'||node.el==='N');
+    let n = 0;
+    if(!exchangeable){
+      const left=nodes[i-1], right=nodes[i+1];
+      if(left && !(left.el==='O'||left.el==='N')) n += left.h;
+      if(right && !(right.el==='O'||right.el==='N')) n += right.h;
+    }
+    const delta = shiftMap[node.groupId]!=null ? shiftMap[node.groupId] : 1.3;
+    const sig = Sig(node.groupId, labelForNode(node), delta, n, node.h, COLORS[colorIdx%COLORS.length], exchangeable?{broad:true}:{});
+    colorIdx++;
+    seenGid[node.groupId]=sig;
+    sigs.push(sig);
+  }
+  sigs.sort((a,b)=>b.delta-a.delta);
+  const lbl = buildCompoundLabel(nodes, L, groupId);
+  return {
+    id:'custom', name:lbl.name, formula:lbl.formula, category:'Build Your Own',
+    structure:{type:'chain', backbone:nodes}, signals:sigs
+  };
+}
+
+/* =========================================================================
+   5. GENERAL STRUCTURE ENGINE (Draw Structure mode -- arbitrary molfile -> signals)
+   ========================================================================= */
+/* Generic structure -> PMR signal-set engine, operating on a parsed MDL V2000 molfile.
+   This is intentionally a teaching-level, rule-based approximation (not a research-grade
+   HOSE-code / increment-table predictor): it follows the same four rules (equivalence,
+   shift ranges, integration, pooled n+1 splitting) used throughout the rest of this tool,
+   generalised from a fixed molecule library to an arbitrary user-drawn graph. */
+
+const VALENCE = { C:4, N:3, O:2, F:1, Cl:1, Br:1, I:1, S:2, P:3, Si:4, B:3, H:1 };
+const ALPHA = {
+  O_ether: 2.4, O_ester: 2.75, O_acidC: 2.75,
+  N_amine: 1.5, N_amide: 2.0,
+  F: 3.6, Cl: 2.1, Br: 2.15, I: 1.7,
+  carbonyl: 1.2, aromatic: 1.45, vinyl: 0.75
+};
+const BETA_FRACTION = 0.16;
+const AR_INC = {
+  oh:      { o: -0.50, m: -0.14, p: -0.40 },
+  or:      { o: -0.48, m: -0.09, p: -0.44 },
+  nh2:     { o: -0.75, m: -0.25, p: -0.65 },
+  nhac:    { o: +0.12, m: -0.07, p: -0.28 },
+  alkyl:   { o: -0.17, m: -0.09, p: -0.18 },
+  f:       { o: -0.26, m:  0.00, p: -0.20 },
+  cl:      { o: +0.02, m: -0.06, p: -0.04 },
+  br:      { o: +0.22, m: -0.13, p: -0.03 },
+  i:       { o: +0.40, m: -0.26, p: -0.03 },
+  cho:     { o: +0.58, m: +0.21, p: +0.27 },
+  ketone:  { o: +0.62, m: +0.14, p: +0.21 },
+  esteracid:{o: +0.71, m: +0.11, p: +0.21 },
+  cn:      { o: +0.27, m: +0.11, p: +0.30 },
+  no2:     { o: +0.95, m: +0.26, p: +0.38 }
+};
+
+function parseMolfile(text){
+  const lines = text.replace(/\r\n/g,'\n').split('\n');
+  const counts = lines[3] || '';
+  const nAtoms = parseInt(counts.substring(0,3),10);
+  const nBonds = parseInt(counts.substring(3,6),10);
+  if(!(nAtoms>0)) throw new Error('No atoms found -- draw a structure first.');
+  const atoms = [];
+  for(let i=0;i<nAtoms;i++){
+    const line = lines[4+i] || '';
+    const x = parseFloat(line.substring(0,10));
+    const y = parseFloat(line.substring(10,20));
+    const el = line.substring(31,34).trim();
+    const chargeCode = parseInt(line.substring(36,39),10) || 0;
+    // MDL charge codes: 0=none,1=+3,2=+2,3=+1,4=doublet,5=-1,6=-2,7=-3
+    const chargeMap = {0:0,1:3,2:2,3:1,4:0,5:-1,6:-2,7:-3};
+    atoms.push({ el: el || 'C', x, y, charge: chargeMap[chargeCode]||0, h:0 });
+  }
+  const bonds = [];
+  for(let i=0;i<nBonds;i++){
+    const line = lines[4+nAtoms+i] || '';
+    const a1 = parseInt(line.substring(0,3),10)-1;
+    const a2 = parseInt(line.substring(3,6),10)-1;
+    const order = parseInt(line.substring(6,9),10) || 1;
+    bonds.push({ a1, a2, order });
+  }
+  return { atoms, bonds };
+}
+
+function buildAdjacency(atoms, bonds){
+  const adj = atoms.map(()=>[]);
+  bonds.forEach(b=>{
+    adj[b.a1].push({ to:b.a2, order:b.order });
+    adj[b.a2].push({ to:b.a1, order:b.order });
+  });
+  return adj;
+}
+
+function computeImplicitH(atoms, adj){
+  atoms.forEach((a,i)=>{
+    const base = VALENCE[a.el];
+    if(base===undefined){ a.h = 0; return; }
+    const bondSum = adj[i].reduce((s,n)=>s+n.order,0);
+    let eff = base + a.charge;
+    if((a.el==='S'||a.el==='P') && bondSum > eff) eff = a.el==='S' ? 6 : 5;
+    a.h = Math.max(0, Math.round(eff - bondSum));
+  });
+}
+
+// ---- ring perception (fundamental cycles via spanning tree back-edges) ----
+function findRings(atoms, adj, bonds){
+  const n = atoms.length;
+  const visited = new Array(n).fill(false);
+  const parent = new Array(n).fill(-1);
+  const depth = new Array(n).fill(0);
+  const rings = [];
+  const bondKey = (a,b)=> a<b ? a+'_'+b : b+'_'+a;
+  const treeEdges = new Set();
+
+  for(let s=0;s<n;s++){
+    if(visited[s]) continue;
+    visited[s]=true; depth[s]=0;
+    const stack=[s];
+    while(stack.length){
+      const u = stack.pop();
+      adj[u].forEach(e=>{
+        const v = e.to;
+        if(!visited[v]){
+          visited[v]=true; parent[v]=u; depth[v]=depth[u]+1;
+          treeEdges.add(bondKey(u,v));
+          stack.push(v);
+        }
+      });
+    }
+  }
+  bonds.forEach(b=>{
+    const key = bondKey(b.a1,b.a2);
+    if(treeEdges.has(key)) return;
+    // back edge -> fundamental cycle: walk both endpoints up to common ancestor
+    let u=b.a1, v=b.a2;
+    const pathU=[u], pathV=[v];
+    while(u!==v){
+      if(depth[u] >= depth[v] && u!==v){ u=parent[u]; if(u<0) break; pathU.push(u); }
+      else if(v!==u){ v=parent[v]; if(v<0) break; pathV.push(v); }
+    }
+    if(u!==v) return; // disconnected guard
+    const ring = pathU.concat(pathV.slice(0,-1).reverse());
+    if(ring.length>=3 && ring.length<=8) rings.push(ring);
+  });
+  return rings;
+}
+
+function detectAromaticRings(atoms, adj, bonds, rings){
+  const orderOf = {};
+  bonds.forEach(b=>{ orderOf[b.a1+'_'+b.a2]=b.order; orderOf[b.a2+'_'+b.a1]=b.order; });
+  const aromaticAtoms = new Set();
+  const aromaticRings = [];
+  rings.forEach(ring=>{
+    if(ring.length!==6) return;
+    if(!ring.every(i=>atoms[i].el==='C')) return;
+    let doubleCount=0;
+    for(let k=0;k<6;k++){
+      const o = orderOf[ring[k]+'_'+ring[(k+1)%6]];
+      if(o===2) doubleCount++;
+    }
+    if(doubleCount===3){
+      ring.forEach(i=>aromaticAtoms.add(i));
+      aromaticRings.push(ring.slice());
+    }
+  });
+  return { aromaticAtoms, aromaticRings };
+}
+
+// ---- Morgan-style equivalence classing ----
+// `aromaticBondKeys` normalises every aromatic ring bond to the same weight so that an
+// arbitrary Kekule (alternating single/double) assignment -- needed for implicit-H /
+// valence maths -- doesn't artificially break the ring's real (delocalised) symmetry,
+// e.g. the two ortho carbons in mono-substituted benzene must refine to one class.
+function equivalenceClasses(atoms, adj, aromaticBondKeys){
+  aromaticBondKeys = aromaticBondKeys || new Set();
+  const n = atoms.length;
+  let inv = atoms.map((a,i)=> a.el+'|'+a.h+'|'+a.charge+'|'+adj[i].length);
+  for(let round=0; round<6; round++){
+    const next = atoms.map((a,i)=>{
+      const nbr = adj[i].map(e=>{
+        const key = i<e.to ? i+'_'+e.to : e.to+'_'+i;
+        const ord = aromaticBondKeys.has(key) ? 1.5 : e.order;
+        return ord+':'+inv[e.to];
+      }).sort().join(',');
+      return inv[i]+'=>['+nbr+']';
+    });
+    inv = next;
+  }
+  // compact to short class ids
+  const map = {};
+  let nextId = 0;
+  const classOf = new Array(n);
+  for(let i=0;i<n;i++){
+    if(!(inv[i] in map)) map[inv[i]] = 'c'+(nextId++);
+    classOf[i] = map[inv[i]];
+  }
+  return classOf;
+}
+
+function elAt(atoms,i){ return atoms[i] ? atoms[i].el : null; }
+
+function bondOrderBetween(bonds,i,j){
+  for(const b of bonds){ if((b.a1===i&&b.a2===j)||(b.a2===i&&b.a1===j)) return b.order; }
+  return 0;
+}
+
+// classify a substituent atom (reached from a ring atom) for aromatic increment lookup
+function classifySubstituent(subIdx, atoms, adj, bonds, ringSet){
+  const a = atoms[subIdx];
+  if(!a) return null;
+  if(a.el==='O'){
+    // ring-C=O (directly a carbonyl O, rare as 'substituent' entry point) -- otherwise ether/OH
+    return a.h>0 ? 'oh' : 'or';
+  }
+  if(a.el==='N'){
+    // amide N: bonded to a carbonyl carbon
+    const bondedToCarbonyl = adj[subIdx].some(e=> elAt(atoms,e.to)==='C' && adj[e.to].some(e2=> elAt(atoms,e2.to)==='O' && bondOrderBetween(bonds,e.to,e2.to)===2));
+    return bondedToCarbonyl ? 'nhac' : 'nh2';
+  }
+  if(a.el==='F') return 'f';
+  if(a.el==='Cl') return 'cl';
+  if(a.el==='Br') return 'br';
+  if(a.el==='I') return 'i';
+  if(a.el==='N' ) return 'nh2';
+  if(a.el==='C'){
+    // carbonyl-bearing carbon?
+    const dOxy = adj[subIdx].filter(e=> elAt(atoms,e.to)==='O');
+    const hasDoubleO = dOxy.some(e=> bondOrderBetween(bonds,subIdx,e.to)===2);
+    const hasSingleO = dOxy.some(e=> bondOrderBetween(bonds,subIdx,e.to)===1);
+    const hasN = adj[subIdx].some(e=> elAt(atoms,e.to)==='N' && bondOrderBetween(bonds,subIdx,e.to)===2);
+    const hasTripleN = adj[subIdx].some(e=> elAt(atoms,e.to)==='N' && bondOrderBetween(bonds,subIdx,e.to)===3);
+    if(hasTripleN) return 'cn';
+    if(hasDoubleO){
+      if(a.h>0 && !hasSingleO) return 'cho';
+      if(hasSingleO) return 'esteracid';
+      return 'ketone';
+    }
+    return 'alkyl';
+  }
+  return null;
+}
+
+function ringDistance(ring, i, j){
+  const idxI = ring.indexOf(i), idxJ = ring.indexOf(j);
+  if(idxI<0||idxJ<0) return 99;
+  const d = Math.abs(idxI-idxJ);
+  return Math.min(d, ring.length-d);
+}
+
+function aromaticShift(atomIdx, ring, atoms, adj, bonds, ringSet){
+  let delta = 7.26;
+  ring.forEach(ri=>{
+    if(ri===atomIdx) return;
+    adj[ri].forEach(e=>{
+      if(ringSet.has(e.to)) return; // only look at substituents OUTSIDE the ring
+      const type = classifySubstituent(e.to, atoms, adj, bonds, ringSet);
+      if(!type || !AR_INC[type]) return;
+      const dist = ringDistance(ring, atomIdx, ri);
+      const inc = AR_INC[type];
+      if(dist===1) delta += inc.o;
+      else if(dist===2) delta += inc.m;
+      else if(dist===3) delta += inc.p;
+    });
+  });
+  return delta;
+}
+
+function sp3Shift(atomIdx, atoms, adj, bonds){
+  const a = atoms[atomIdx];
+  const heavyNbrs = adj[atomIdx].filter(e=> atoms[e.to].el!=='H');
+  let delta = 0.9;
+  if(heavyNbrs.length>=2) delta += 0.35;
+  if(heavyNbrs.length>=3) delta += 0.35;
+
+  function typeOf(idx, fromIdx){
+    const at = atoms[idx];
+    if(at.el==='O'){
+      // a carbonyl's own double-bonded O is already represented by the 'carbonyl' alpha
+      // term applied at the adjacent carbon -- don't also count it as a separate O here.
+      if(bondOrderBetween(bonds, idx, fromIdx)===2) return null;
+      const otherNbrs = adj[idx].filter(e=> e.to!==fromIdx && atoms[e.to].el!=='H');
+      const esterLike = otherNbrs.some(e=> elAt(atoms,e.to)==='C' &&
+        adj[e.to].some(e2=> elAt(atoms,e2.to)==='O' && bondOrderBetween(bonds,e.to,e2.to)===2));
+      return esterLike ? 'O_ester' : 'O_ether';
+    }
+    if(at.el==='N'){
+      const amide = adj[idx].some(e=> elAt(atoms,e.to)==='C' && adj[e.to].some(e2=> elAt(atoms,e2.to)==='O' && bondOrderBetween(bonds,e.to,e2.to)===2));
+      return amide ? 'N_amide' : 'N_amine';
+    }
+    if(at.el==='F') return 'F';
+    if(at.el==='Cl') return 'Cl';
+    if(at.el==='Br') return 'Br';
+    if(at.el==='I') return 'I';
+    if(at.el==='C'){
+      const hasDoubleO = adj[idx].some(e=> elAt(atoms,e.to)==='O' && bondOrderBetween(bonds,idx,e.to)===2);
+      if(hasDoubleO) return 'carbonyl';
+      const hasDoubleC = adj[idx].some(e=> elAt(atoms,e.to)==='C' && bondOrderBetween(bonds,idx,e.to)===2);
+      if(hasDoubleC) return 'vinyl';
+      return null;
+    }
+    return null;
+  }
+
+  // alpha
+  heavyNbrs.forEach(e=>{
+    const t = typeOf(e.to, atomIdx);
+    if(t && ALPHA[t]!==undefined) delta += ALPHA[t];
+  });
+  // beta (distance 2, excluding back to atomIdx). Only tunnel beta effects through a
+  // "plain" (unflagged) bridging atom -- if the alpha neighbour itself is already a
+  // special deshielding group (O/N/halogen/carbonyl/aromatic/vinyl), its own further
+  // substituents are part of that SAME group and must not be counted again.
+  const betaSeen = new Set();
+  heavyNbrs.forEach(e=>{
+    if(typeOf(e.to, atomIdx)) return; // bridge already accounted for via alpha
+    adj[e.to].forEach(e2=>{
+      if(e2.to===atomIdx) return;
+      if(atoms[e2.to].el==='H') return;
+      if(betaSeen.has(e2.to)) return;
+      betaSeen.add(e2.to);
+      const t = typeOf(e2.to, e.to);
+      if(t && ALPHA[t]!==undefined) delta += ALPHA[t]*BETA_FRACTION;
+    });
+  });
+  return Math.max(0.5, Math.min(13.5, delta));
+}
+
+function labelFor(el, h, aromatic){
+  if(aromatic) return 'Ar-H';
+  if(h<=0) return el;
+  const sub = {2:'₂',3:'₃',4:'₄'}[h] || '';
+  return el + 'H' + sub;
+}
+
+function analyzeMolfile(text){
+  const { atoms, bonds } = parseMolfile(text);
+  const adj = buildAdjacency(atoms, bonds);
+  computeImplicitH(atoms, adj);
+  const rings = findRings(atoms, adj, bonds);
+  const { aromaticAtoms, aromaticRings } = detectAromaticRings(atoms, adj, bonds, rings);
+  const aromaticBondKeys = new Set();
+  aromaticRings.forEach(ring=>{
+    for(let k=0;k<ring.length;k++){
+      const i=ring[k], j=ring[(k+1)%ring.length];
+      aromaticBondKeys.add(i<j ? i+'_'+j : j+'_'+i);
+    }
+  });
+  const classOf = equivalenceClasses(atoms, adj, aromaticBondKeys);
+
+  // group H-bearing atoms by equivalence class
+  const groups = {}; // classId -> {atomIdxs:[], h, el, aromatic}
+  atoms.forEach((a,i)=>{
+    if(a.h<=0) return;
+    const cid = classOf[i];
+    if(!groups[cid]) groups[cid] = { atomIdxs:[], h:a.h, el:a.el, aromatic: aromaticAtoms.has(i) };
+    groups[cid].atomIdxs.push(i);
+  });
+
+  const signals = [];
+  let colorIdx = 0;
+  Object.keys(groups).forEach(cid=>{
+    const g = groups[cid];
+    const rep = g.atomIdxs[0];
+    const exchangeable = (g.el==='O' || g.el==='N');
+    const count = g.atomIdxs.length;
+    const integration = g.h * count;
+    let delta, mult, abbr, broad=false, n=0;
+
+    if(exchangeable){
+      broad = true; n = 0; abbr='s'; mult='Broad s';
+      if(g.el==='O'){
+        // acid vs alcohol/phenol
+        const cIdx = adj[rep].find(e=>elAt(atoms,e.to)==='C');
+        const onCarbonyl = cIdx && adj[cIdx.to].some(e=> elAt(atoms,e.to)==='O'&&bondOrderBetween(bonds,cIdx.to,e.to)===2 && e.to!==rep);
+        const onAromatic = cIdx && aromaticAtoms.has(cIdx.to);
+        delta = onCarbonyl ? 11.8 : (onAromatic ? 5.5 : 2.5);
+      } else {
+        const onAromatic = adj[rep].some(e=>aromaticAtoms.has(e.to));
+        delta = onAromatic ? 3.6 : 1.3;
+      }
+    } else if(g.aromatic){
+      const ring = aromaticRings.find(r=>r.includes(rep));
+      delta = aromaticShift(rep, ring, atoms, adj, bonds, new Set(ring));
+      abbr = 'm'; mult = 'Multiplet'; n = null;
+    } else {
+      const hasDoubleO = adj[rep].some(e=>elAt(atoms,e.to)==='O'&&bondOrderBetween(bonds,rep,e.to)===2);
+      const hasDoubleC = adj[rep].some(e=>elAt(atoms,e.to)==='C'&&bondOrderBetween(bonds,rep,e.to)===2);
+      // a carbonyl carbon that still has an implicit H can only be an aldehyde (R-CHO) --
+      // a ketone/acid/ester carbonyl carbon has no spare valence left for H.
+      if(hasDoubleO && g.h>0){
+        delta = 9.7; // aldehyde CHO
+      } else if(hasDoubleC){
+        delta = 5.8;
+      } else {
+        delta = sp3Shift(rep, atoms, adj, bonds);
+      }
+      // pooled n+1: sum h over direct non-O/N heavy neighbours
+      n = adj[rep].reduce((s,e)=>{
+        const nb = atoms[e.to];
+        if(nb.el==='O'||nb.el==='N') return s;
+        return s + (nb.h||0);
+      }, 0);
+    }
+
+    if(!broad && !abbr){ abbr = multAbbr(n); mult = multName(n); }
+
+    signals.push({
+      groupId: cid, label: labelFor(g.el, g.h, g.aromatic) + (count>1?` (×${count}${g.aromatic?', ring':''})`:''),
+      delta: Math.round(delta*100)/100, n, integration,
+      color: COLORS[colorIdx++ % COLORS.length],
+      broad, abbr, mult
+    });
+  });
+
+  signals.sort((a,b)=>b.delta-a.delta);
+  return signals;
+}
+
+
+/* =========================================================================
+   6. UI WIRING
+   ========================================================================= */
+const $ = (id)=>document.getElementById(id);
+
+let mode = 'library';          // 'library' | 'builder'
+let currentCompound = null;    // the compound currently shown in the structure panel
+let selectedGroup = null;      // groupId currently highlighted across structure/spectrum/table
+let activeCategory = 'All';
+
+function allCategories(){
+  const seen = [];
+  LIBRARY.forEach(c=>{ if(seen.indexOf(c.category)===-1) seen.push(c.category); });
+  return ['All'].concat(seen);
+}
+
+function matchesSearch(c, q){
+  if(!q) return true;
+  q = q.toLowerCase();
+  return c.name.toLowerCase().indexOf(q)>-1 || c.formula.toLowerCase().indexOf(q)>-1 || c.category.toLowerCase().indexOf(q)>-1;
+}
+
+function renderCategoryChips(){
+  const cats = allCategories();
+  $('categoryChips').innerHTML = cats.map(cat=>
+    `<button type="button" class="chip${cat===activeCategory?' active':''}" data-cat="${esc(cat)}">${esc(cat)}</button>`
+  ).join('');
+}
+
+function renderCompoundGrid(){
+  const q = $('searchBox').value.trim();
+  const list = LIBRARY.filter(c => (activeCategory==='All' || c.category===activeCategory) && matchesSearch(c,q));
+  if(list.length===0){
+    $('compoundGrid').innerHTML = '<div class="placeholder">No compounds match that search.</div>';
+    return;
+  }
+  $('compoundGrid').innerHTML = list.map(c =>
+    `<div class="compound-card${currentCompound && currentCompound.id===c.id ? ' selected':''}" data-id="${esc(c.id)}">
+       <div class="nm">${esc(c.name)}</div>
+       <div class="fm">${c.formula}</div>
+     </div>`
+  ).join('');
+}
+
+function resetResultStage(){
+  selectedGroup = null;
+  $('spectrumArea').innerHTML = '<div class="placeholder">Click "Predict NMR Spectrum" to generate the spectrum for this structure.</div>';
+  $('tableStage').style.display = 'none';
+  $('sigTableBody').innerHTML = '';
+}
+
+function showCompound(compound){
+  currentCompound = compound;
+  $('mainTitle').textContent = compound.name;
+  $('mainFormula').innerHTML = compound.formula;
+  let html = renderStructure(compound);
+  if(compound.caption){
+    html += `<div class="caption-note">Note: ${esc(compound.caption)}</div>`;
+  }
+  $('structureWrap').innerHTML = html;
+  resetResultStage();
+}
+
+function selectLibraryCompound(id){
+  const c = LIBRARY.find(x=>x.id===id);
+  if(!c) return;
+  showCompound(c);
+  renderCompoundGrid();
+}
+
+function builderGroupMeta(id){ return BUILDER_GROUPS.find(g=>g.id===id) || BUILDER_GROUPS[0]; }
+
+function refreshBuilderCompound(){
+  const groupId = $('funcGroupSelect').value;
+  const meta = builderGroupMeta(groupId);
+  let L = parseInt($('chainLenRange').value, 10);
+  if(meta.minLen && L < meta.minLen){
+    L = meta.minLen;
+    $('chainLenRange').value = String(L);
+  }
+  $('chainLenOut').textContent = String(L);
+  const compound = generateBuilderCompound(L, groupId);
+  $('builderNameBox').innerHTML = compound.formula + ' <b>(' + compound.name + ')</b>';
+  showCompound(compound);
+}
+
+function setMode(next){
+  mode = next;
+  $('tabLibrary').classList.toggle('active', mode==='library');
+  $('tabBuilder').classList.toggle('active', mode==='builder');
+  $('tabDraw').classList.toggle('active', mode==='draw');
+  $('libraryMode').style.display = mode==='library' ? '' : 'none';
+  $('builderMode').style.display = mode==='builder' ? '' : 'none';
+  $('drawModeBox').style.display = mode==='draw' ? '' : 'none';
+  $('structureWrap').style.display = mode==='draw' ? 'none' : '';
+  $('jsmeStage').style.display = mode==='draw' ? 'flex' : 'none';
+  if(mode==='library'){
+    if(currentCompound && (currentCompound.category==='Build Your Own' || currentCompound.category==='Draw Structure')){
+      selectLibraryCompound('ethanol');
+    }
+  } else if(mode==='builder'){
+    refreshBuilderCompound();
+  } else if(mode==='draw'){
+    currentCompound = null;
+    $('mainTitle').textContent = 'Draw your own structure';
+    $('mainFormula').innerHTML = 'Use the editor below, then click “Predict NMR Spectrum.”';
+    resetResultStage();
+  }
+}
+
+function renderPredictionResults(signals){
+  selectedGroup = null;
+  $('spectrumArea').innerHTML = renderSpectrumSVG(signals);
+  const rows = signals.map(sig=>{
+    const n = (sig.abbr==='m') ? '—' : (sig.n||0);
+    return `<tr data-group="${esc(sig.groupId)}">
+      <td><span class="swatch" style="background:${sig.color}"></span>${esc(sig.label)}</td>
+      <td>${sig.delta.toFixed(2)}</td>
+      <td><span class="mult-tag">${esc(sig.broad ? 'Broad s' : sig.mult)}</span></td>
+      <td>${n}</td>
+      <td>${sig.integration}H</td>
+    </tr>`;
+  }).join('');
+  $('sigTableBody').innerHTML = rows;
+  $('tableStage').style.display = '';
+}
+
+// Hill-system molecular formula from a parsed+implicit-H'd atom list.
+function formulaFromAtoms(atoms){
+  const counts = {};
+  let totalH = 0;
+  atoms.forEach(a=>{ counts[a.el] = (counts[a.el]||0)+1; totalH += a.h||0; });
+  if(totalH>0) counts['H'] = totalH;
+  const order = [];
+  if(counts['C']) order.push('C');
+  if(counts['H']) order.push('H');
+  Object.keys(counts).filter(k=>k!=='C'&&k!=='H').sort().forEach(k=>order.push(k));
+  return order.map(k=> k + (counts[k]>1 ? sub(counts[k]) : '')).join('');
+}
+
+function drawPredict(){
+  if(!window.jsmeApplet){
+    $('spectrumArea').innerHTML = '<div class="placeholder">The structure editor hasn\'t finished loading yet — wait a moment and try again.</div>';
+    return;
+  }
+  let molText;
+  try{ molText = window.jsmeApplet.molFile(); }
+  catch(err){
+    $('spectrumArea').innerHTML = '<div class="placeholder">Couldn\'t read the drawn structure. Try redrawing it.</div>';
+    return;
+  }
+  try{
+    const parsed = parseMolfile(molText);
+    const atoms = parsed.atoms, bonds = parsed.bonds;
+    if(atoms.length===0) throw new Error('Draw a structure first.');
+    const adj = buildAdjacency(atoms, bonds);
+    computeImplicitH(atoms, adj);
+    const formula = formulaFromAtoms(atoms);
+    const signals = analyzeMolfile(molText);
+    $('mainTitle').textContent = 'Drawn structure';
+    $('mainFormula').innerHTML = formula;
+    if(signals.length===0){
+      $('spectrumArea').innerHTML = '<div class="placeholder">This structure has no C–H / O–H / N–H protons to show a ¹H NMR spectrum for.</div>';
+      $('tableStage').style.display='none';
+      return;
+    }
+    currentCompound = { id:'drawn', name:'Drawn structure', formula, category:'Draw Structure', signals };
+    renderPredictionResults(signals);
+    // stash an atom-index -> group map for best-effort highlighting inside the JSME canvas
+    const rings = findRings(atoms, adj, bonds);
+    const aro = detectAromaticRings(atoms, adj, bonds, rings);
+    const aromaticBondKeys = new Set();
+    aro.aromaticRings.forEach(ring=>{
+      for(let k=0;k<ring.length;k++){ const i=ring[k], j=ring[(k+1)%ring.length]; aromaticBondKeys.add(i<j?i+'_'+j:j+'_'+i); }
+    });
+    window.__drawAtomClass = equivalenceClasses(atoms, adj, aromaticBondKeys);
+    window.__drawGroupColor = {};
+    signals.forEach(s=> window.__drawGroupColor[s.groupId] = s.color);
+  }catch(err){
+    $('spectrumArea').innerHTML = '<div class="placeholder">Couldn\'t analyse this structure (' + esc(err.message||'unknown error') + '). Try a simpler structure.</div>';
+    $('tableStage').style.display='none';
+  }
+}
+
+function runPrediction(){
+  if(mode==='draw'){ drawPredict(); return; }
+  if(!currentCompound) return;
+  renderPredictionResults(currentCompound.signals);
+}
+
+/* ---- click-to-highlight linking (structure H-labels <-> spectrum peaks <-> table rows) ---- */
+function applyHighlight(){
+  const svgs = document.querySelectorAll('#structureWrap svg, #spectrumArea svg');
+  svgs.forEach(svg=>{
+    svg.classList.toggle('has-sel', !!selectedGroup);
+    svg.querySelectorAll('[data-group]').forEach(el=>{
+      el.classList.toggle('sel-on', !!selectedGroup && el.getAttribute('data-group')===selectedGroup);
+    });
+  });
+  document.querySelectorAll('#sigTableBody tr').forEach(tr=>{
+    tr.classList.toggle('highlight', !!selectedGroup && tr.getAttribute('data-group')===selectedGroup);
+  });
+  // Best-effort: also colour the matching atoms inside the JSME canvas itself. This uses
+  // JSME's setAtomBackgroundColors API, which could not be interactively verified in this
+  // build environment -- it's wrapped so a mismatched call never breaks the rest of the UI.
+  if(mode==='draw' && window.jsmeApplet && window.__drawAtomClass){
+    try{
+      const classes = window.__drawAtomClass;
+      const colors = classes.map(cid => (selectedGroup && cid===selectedGroup) ? (window.__drawGroupColor[cid]||null) : null);
+      window.jsmeApplet.setAtomBackgroundColors(colors);
+    }catch(e){ /* highlighting inside the editor is a nice-to-have only */ }
+  }
+}
+
+function onGroupClick(groupId){
+  selectedGroup = (selectedGroup===groupId) ? null : groupId;
+  applyHighlight();
+}
+
+function findGroupTarget(el){
+  while(el && el !== document.body){
+    if(el.getAttribute && el.getAttribute('data-group')) return el.getAttribute('data-group');
+    el = el.parentNode;
+  }
+  return null;
+}
+
+function init(){
+  // category chips + search
+  renderCategoryChips();
+  renderCompoundGrid();
+  $('categoryChips').addEventListener('click', (e)=>{
+    const btn = e.target.closest('.chip');
+    if(!btn) return;
+    activeCategory = btn.getAttribute('data-cat');
+    renderCategoryChips();
+    renderCompoundGrid();
+  });
+  $('searchBox').addEventListener('input', renderCompoundGrid);
+  $('compoundGrid').addEventListener('click', (e)=>{
+    const card = e.target.closest('.compound-card');
+    if(!card) return;
+    selectLibraryCompound(card.getAttribute('data-id'));
+  });
+
+  // mode tabs
+  $('tabLibrary').addEventListener('click', ()=>setMode('library'));
+  $('tabBuilder').addEventListener('click', ()=>setMode('builder'));
+  $('tabDraw').addEventListener('click', ()=>setMode('draw'));
+
+  // draw-mode "Clear" button
+  $('jsmeClearBtn').addEventListener('click', ()=>{
+    if(window.jsmeApplet){
+      try{ window.jsmeApplet.reset(); }
+      catch(e){ try{ window.jsmeApplet.readMolFile(''); }catch(e2){ /* ignore */ } }
+    }
+    currentCompound = null;
+    resetResultStage();
+  });
+
+  // builder controls
+  BUILDER_GROUPS.forEach(g=>{
+    const opt = document.createElement('option');
+    opt.value = g.id; opt.textContent = g.label;
+    $('funcGroupSelect').appendChild(opt);
+  });
+  $('chainLenRange').addEventListener('input', refreshBuilderCompound);
+  $('funcGroupSelect').addEventListener('change', refreshBuilderCompound);
+
+  // predict button
+  $('predictBtn').addEventListener('click', runPrediction);
+
+  // highlight delegation
+  document.addEventListener('click', (e)=>{
+    const gid = findGroupTarget(e.target);
+    if(gid) onGroupClick(gid);
+  });
+
+  // initial compound
+  selectLibraryCompound('ethanol');
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+})();
+</script>
+</body>
+</html>
+
+
