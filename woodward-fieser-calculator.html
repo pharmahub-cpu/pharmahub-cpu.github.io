@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Woodward–Fieser Rule Explorer | Conjugated Dienes</title>
+<style>
+  :root{
+    --uv: #5b0db3;
+    --violet: #7b2ff7;
+    --blue: #2d7dff;
+    --green: #17c994;
+    --amber: #ffb020;
+    --red: #ff5a6e;
+    --ink: #1c1030;
+    --card-bg: rgba(255,255,255,0.92);
+    --glass: rgba(255,255,255,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Segoe UI', 'Poppins', Arial, sans-serif;
+    color:var(--ink);
+    background: linear-gradient(135deg, #190a35 0%, #3b0f80 22%, #5b14b5 42%, #1f5fd6 68%, #0fb3a8 100%);
+    background-attachment: fixed;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 18px 10px;}
+
+  .split-grid{
+    display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap:26px; align-items:start;
+  }
+  .split-grid .card{margin:0;}
+  .split-col-right .card + .card{margin-top:26px;}
+  @media (max-width:980px){
+    .split-grid{grid-template-columns:1fr;}
+    .split-col-right .card + .card{margin-top:26px;}
+  }
+
+  .dev-credit-bar{
+    text-align:center;
+    margin-top:14px;
+  }
+  .dev-credit-pill{
+    display:inline-block;
+    background:#1a2150;
+    border:1.5px solid #3b4aa0;
+    color:#cfe0ff;
+    border-radius:999px;
+    padding:8px 20px;
+    font-size:.8rem;
+    font-weight:600;
+    letter-spacing:.2px;
+  }
+
+  header.hero{
+    text-align:center;
+    color:#fff;
+    padding:38px 20px 30px;
+    position:relative;
+    overflow:hidden;
+  }
+  header.hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(90deg,
+      rgba(123,47,247,.35) 0 2%, rgba(45,125,255,.35) 2% 4%,
+      rgba(23,201,148,.3) 4% 6%, rgba(255,176,32,.25) 6% 8%,
+      rgba(255,90,110,.25) 8% 10%, transparent 10% 12%);
+    opacity:.5; filter:blur(2px); z-index:0;
+  }
+  header.hero > *{position:relative; z-index:1;}
+  header.hero h1{
+    font-size:2.3rem; margin:0 0 8px; font-weight:800;
+    letter-spacing:.5px;
+    text-shadow:0 4px 18px rgba(0,0,0,.35);
+  }
+  header.hero p.sub{
+    font-size:1.05rem; opacity:.92; max-width:720px; margin:0 auto;
+    line-height:1.5;
+  }
+  .badge-row{display:flex; justify-content:center; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .badge{
+    background:var(--glass); border:1px solid rgba(255,255,255,.35);
+    padding:6px 14px; border-radius:999px; font-size:.82rem; backdrop-filter:blur(6px);
+  }
+
+  .card{
+    background:var(--card-bg);
+    border-radius:18px;
+    box-shadow:0 14px 40px rgba(10,0,40,.35);
+    padding:26px 26px 30px;
+    margin:26px 0;
+    animation: floatIn .6s ease both;
+  }
+  @keyframes floatIn{ from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:translateY(0);} }
+
+  .card h2{
+    margin-top:0; font-size:1.35rem; color:var(--uv);
+    display:flex; align-items:center; gap:10px;
+  }
+  .card h2 .num{
+    background:linear-gradient(135deg,var(--violet),var(--blue));
+    color:#fff; width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.95rem; flex:none;
+  }
+  .card p.lead{color:#4a3d66; line-height:1.6; font-size:.97rem;}
+
+  ul.rule-list{line-height:1.8; color:#3a2d55; padding-left:22px;}
+  ul.rule-list li strong{color:var(--uv);}
+
+  /* ---- Structure editor embed ---- */
+  .editor-frame-wrap{
+    border:2px solid #d9c8fb; border-radius:14px; overflow:hidden;
+    box-shadow:0 10px 28px rgba(91,20,181,.18);
+  }
+  #ketcherFrame{width:100%; height:560px; border:0; display:block; background:#fff;}
+  .draw-hint{text-align:center; color:#8673a8; font-size:.82rem; margin-top:10px;}
+  .capture-row{
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:14px;
+  }
+  .readout{
+    flex:1; min-width:240px; background:#f6f1ff; border:1.5px solid #d9c8fb;
+    border-radius:10px; padding:10px 14px; font-size:.86rem; color:#4a3d66;
+    font-family:'Consolas', monospace; word-break:break-all;
+  }
+  .readout .lbl{font-family:'Segoe UI',sans-serif; font-weight:700; color:var(--uv); display:block; margin-bottom:3px;}
+
+  /* ---- Compound selector ---- */
+  .compound-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:6px;}
+  .compound-card{
+    border:2px solid #e6dcfb; border-radius:14px; padding:14px; text-align:center;
+    cursor:pointer; transition:.18s; background:#fbf9ff;
+  }
+  .compound-card:hover{transform:translateY(-4px); box-shadow:0 10px 24px rgba(91,20,181,.18);}
+  .compound-card.selected{
+    border-color:var(--uv); background:linear-gradient(160deg,#f3eafe,#eaf2ff);
+    box-shadow:0 10px 24px rgba(91,20,181,.25);
+  }
+  .compound-card svg{width:100%; height:90px;}
+  .compound-card .cname{font-weight:700; margin-top:6px; color:var(--ink); font-size:.92rem;}
+
+  /* ---- Calculation table ---- */
+  table.calc{width:100%; border-collapse:collapse; margin-top:16px; font-size:.93rem;}
+  table.calc th{
+    background:linear-gradient(135deg,var(--violet),var(--blue));
+    color:#fff; text-align:left; padding:10px 12px; font-size:.85rem;
+  }
+  table.calc td{padding:10px 12px; border-bottom:1px solid #ece4fb; vertical-align:middle;}
+  table.calc tr:nth-child(even) td{background:#faf8ff;}
+  table.calc input[type=number]{
+    width:70px; padding:6px 8px; border:1.5px solid #d9c8fb; border-radius:8px; font-size:.92rem;
+  }
+  table.calc select{
+    padding:6px 8px; border:1.5px solid #d9c8fb; border-radius:8px; font-size:.88rem; max-width:220px;
+  }
+  table.calc .subtotal{font-weight:700; color:var(--uv); min-width:60px; display:inline-block;}
+  .param-name{font-weight:600;}
+  .param-note{display:block; font-size:.76rem; color:#8673a8; font-weight:400; margin-top:2px;}
+  .unit-chip{
+    background:#eee6fb; color:var(--uv); border-radius:999px; padding:2px 9px; font-size:.78rem; font-weight:700;
+  }
+
+  /* ---- Auto-calculate toggle ---- */
+  .autocalc-bar{
+    display:flex; align-items:center; gap:14px; margin-top:16px;
+    background:#f6f1ff; border:1.5px solid #d9c8fb; border-radius:12px; padding:12px 16px;
+    transition:.2s;
+  }
+  .autocalc-bar.live{background:#eafbf4; border-color:#9fe8c9;}
+  .switch{position:relative; display:inline-block; width:46px; height:26px; flex:none;}
+  .switch input{opacity:0; width:0; height:0;}
+  .switch .slider{
+    position:absolute; cursor:pointer; inset:0; background:#d9c8fb; border-radius:999px; transition:.2s;
+  }
+  .switch .slider::before{
+    content:""; position:absolute; width:20px; height:20px; left:3px; top:3px;
+    background:#fff; border-radius:50%; transition:.2s; box-shadow:0 2px 4px rgba(0,0,0,.25);
+  }
+  .switch input:checked + .slider{background:var(--green);}
+  .switch input:checked + .slider::before{transform:translateX(20px);}
+  .autocalc-text{display:flex; flex-direction:column; gap:2px;}
+  .autocalc-title{font-weight:700; color:var(--uv); font-size:.92rem;}
+  .autocalc-sub{font-size:.8rem; color:#6a5a8f;}
+  .autocalc-bar.live .autocalc-sub{color:#117a55;}
+  table.calc input:disabled, table.calc select:disabled{
+    background:#f1eefb; color:#8673a8; cursor:not-allowed;
+  }
+
+  details.advanced{margin-top:14px; border:1.5px dashed #d9c8fb; border-radius:12px; padding:4px 14px;}
+  details.advanced summary{cursor:pointer; font-weight:700; color:var(--uv); padding:8px 0;}
+
+  .total-box{
+    margin-top:20px; display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(135deg,#1f1140,#3a1670);
+    color:#fff; padding:18px 24px; border-radius:16px; flex-wrap:wrap; gap:12px;
+  }
+  .total-box .label{font-size:1rem; opacity:.85;}
+  .total-box .value{font-size:2.2rem; font-weight:800; transition:transform .25s;}
+  .total-box .value.pulse{animation:pulse .35s ease;}
+  @keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.12); color:var(--amber);}100%{transform:scale(1);}}
+
+  .action-row{display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;}
+  .btn{
+    border:none; padding:12px 22px; border-radius:12px; font-weight:700; font-size:.95rem;
+    cursor:pointer; transition:.18s; box-shadow:0 6px 16px rgba(0,0,0,.15);
+  }
+  .btn-check{background:linear-gradient(135deg,var(--green),#0ea97e); color:#fff;}
+  .btn-check:hover{transform:translateY(-2px); box-shadow:0 10px 22px rgba(23,201,148,.4);}
+  .btn-reset{background:#f1eafc; color:var(--uv);}
+  .btn-reset:hover{background:#e3d4fb;}
+  .btn-ref{background:#fff3df; color:#9a6400;}
+  .btn-ref:hover{background:#ffe6b8;}
+
+  .feedback{
+    margin-top:18px; padding:16px 20px; border-radius:14px; font-size:1.02rem; font-weight:600;
+    display:none; align-items:center; gap:12px;
+  }
+  .feedback.show{display:flex; animation:floatIn .4s ease both;}
+  .feedback.good{background:#e4fbf1; color:#117a55; border:1.5px solid #9fe8c9;}
+  .feedback.bad{background:#fff0ee; color:#b32d3f; border:1.5px solid #ffc2bd;}
+  .feedback .emoji{font-size:1.6rem;}
+
+  /* reference table */
+  #refTable{margin-top:16px; display:none;}
+  #refTable.show{display:block; animation:floatIn .45s ease both;}
+  table.ref{width:100%; border-collapse:collapse; font-size:.9rem;}
+  table.ref th{background:#2d1152; color:#fff; padding:9px 12px; text-align:left;}
+  table.ref td{padding:9px 12px; border-bottom:1px solid #eee2fb;}
+  table.ref tr:nth-child(even) td{background:#faf7ff;}
+  table.ref td.val{font-weight:700; color:var(--uv);}
+
+  .confetti{
+    position:fixed; top:-20px; width:10px; height:16px; z-index:999; pointer-events:none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(100vh) rotate(540deg); opacity:.3; }
+  }
+
+  footer{
+    text-align:center; color:rgba(255,255,255,.75); font-size:.82rem; margin-top:30px; padding:0 20px;
+  }
+  footer a{color:#cdbbff;}
+
+  @media (max-width:640px){
+    header.hero h1{font-size:1.5rem;}
+    .total-box .value{font-size:1.7rem;}
+    table.calc{font-size:.84rem;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>🔬 Woodward–Fieser Rule Explorer</h1>
+  <p class="sub">An interactive lab notebook for predicting the <strong>λ<sub>max</sub></strong> of conjugated dienes by UV–Visible spectroscopy — sketch it, build the increment table, and check your prediction.</p>
+  <div class="badge-row">
+    <span class="badge">📐 Draw the diene</span>
+    <span class="badge">➕ Add increments</span>
+    <span class="badge">✅ Auto-totalled</span>
+    <span class="badge">📖 Standard values on hand</span>
+  </div>
+  <div class="dev-credit-bar">
+    <span class="dev-credit-pill">Developed by Shrikrishna S. Maske, Lecturer, Govt. Polytechnic, Dept. of Pharmacy, Ratnagiri</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ RULES SUMMARY ============ -->
+  <div class="card">
+    <h2><span class="num">1</span> What Are the Woodward–Fieser Rules?</h2>
+    <p class="lead">For a conjugated diene, the Woodward–Fieser rules let you <em>build up</em> the expected λ<sub>max</sub> of the π→π* transition from a fixed base value, by adding a small increment for every structural feature attached to the chromophore.</p>
+    <ul class="rule-list">
+      <li>Start from a <strong>base value</strong> that depends on whether the diene is <em>acyclic / heteroannular</em> (the two double bonds are in different rings, or one/both are open-chain) or <em>homoannular</em> (both double bonds sit inside the same ring, in an s-cis arrangement).</li>
+      <li>Add <strong>+30 nm</strong> for every carbon–carbon double bond that extends the conjugation beyond the parent diene.</li>
+      <li>Add <strong>+5 nm</strong> for every alkyl group or ring-residue directly attached to one of the four diene carbons.</li>
+      <li>Add <strong>+5 nm</strong> for every double bond that is <em>exocyclic</em> to a ring (one of its carbons is in the ring, the other is outside it).</li>
+      <li>Add <strong>+39 nm</strong> once if the system additionally contains a homoannular diene component fused to the main chromophore.</li>
+      <li>Certain auxochromes (–OR, –SR, –Cl/–Br, –NR₂, –OCOCH₃) attached to the diene add their own fixed increment.</li>
+    </ul>
+    <p class="lead">Sum every increment onto the base value — that sum <em>is</em> your predicted λ<sub>max</sub>, in nm.</p>
+  </div>
+
+  <!-- ============ PRACTICE COMPOUND (full width) ============ -->
+  <div class="card">
+    <h2><span class="num">2</span> Pick a Practice Compound</h2>
+    <p class="lead">Choose one of the dienes below. Then sketch it on the left and work out its increments in the table on the right.</p>
+    <div class="compound-grid" id="compoundGrid">
+
+      <div class="compound-card" data-key="butadiene">
+        <svg viewBox="0 0 160 70">
+          <polyline points="15,50 50,20 85,50 120,20" fill="none" stroke="#1c1030" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+          <line x1="24" y1="49" x2="48" y2="28" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="94" y1="49" x2="118" y2="28" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="cname">1,3-Butadiene</div>
+      </div>
+
+      <div class="compound-card" data-key="dimethylbutadiene">
+        <svg viewBox="0 0 160 90">
+          <line x1="60" y1="55" x2="100" y2="55" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="60" y1="55" x2="60" y2="20" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="100" y1="55" x2="100" y2="20" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="60" y1="55" x2="30" y2="80" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="58" y1="62" x2="37" y2="79" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="100" y1="55" x2="130" y2="80" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="102" y1="62" x2="123" y2="79" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="cname">2,3-Dimethyl-1,3-butadiene</div>
+      </div>
+
+      <div class="compound-card" data-key="cyclohexadiene">
+        <svg viewBox="0 0 150 110">
+          <polygon points="50,20 100,20 125,55 100,90 50,90 25,55" fill="none" stroke="#1c1030" stroke-width="3" stroke-linejoin="round"/>
+          <line x1="34" y1="53" x2="51" y2="29" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+          <line x1="99" y1="29" x2="116" y2="53" stroke="#1c1030" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="cname">1,3-Cyclohexadiene</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ STRUCTURE EDITOR (left) + INCREMENT TABLE (right) ============ -->
+  <div class="split-grid">
+
+    <div class="split-col-left">
+      <div class="card">
+        <h2><span class="num">3</span> Sketch Your Diene</h2>
+        <p class="lead">This is a full chemical structure editor (Ketcher) — draw with real atoms, bonds and ring templates, exactly like you would in a professional drawing tool. It helps to mark the four diene carbons, every substituent, and any exocyclic double bond before you fill in the table on the right.</p>
+        <div class="editor-frame-wrap">
+          <iframe id="ketcherFrame" src="structure-editor/index.html" title="Chemical structure editor"></iframe>
+        </div>
+        <p class="draw-hint">Draw your structure, then click <strong>✅ Use This Structure</strong> inside the editor's top bar to capture it below — this capture is just for your reference, it isn't graded.</p>
+        <div class="capture-row">
+          <div class="readout" id="captureReadout">
+            <span class="lbl">Captured structure</span>
+            Nothing captured yet — draw a structure above and click "Use This Structure".
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-col-right">
+
+      <!-- ============ CALCULATION TABLE ============ -->
+      <div class="card">
+        <h2><span class="num">4</span> Build the Increment Table</h2>
+        <p class="lead">Select or enter a value for each row — the subtotal and the running total update automatically.</p>
+
+        <div class="autocalc-bar">
+          <label class="switch">
+            <input type="checkbox" id="autoCalcToggle">
+            <span class="slider"></span>
+          </label>
+          <div class="autocalc-text">
+            <span class="autocalc-title">⚡ Auto-Calculate from Structure</span>
+            <span class="autocalc-sub" id="autoCalcStatus">Off — fill the table yourself, or switch this on to read values straight from your drawing.</span>
+          </div>
+        </div>
+
+        <table class="calc">
+          <thead>
+            <tr><th>Structural Feature</th><th>Standard Value</th><th>Your Entry</th><th>Subtotal</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="param-name">Base value
+                <span class="param-note">Acyclic / heteroannular diene vs. homoannular diene</span>
+              </td>
+              <td><span class="unit-chip">217 / 253 nm</span></td>
+              <td>
+                <select id="baseSelect">
+                  <option value="217">Acyclic / heteroannular diene — 217 nm</option>
+                  <option value="253">Homoannular diene — 253 nm</option>
+                </select>
+              </td>
+              <td><span class="subtotal" id="sub-base">0</span> nm</td>
+            </tr>
+            <tr>
+              <td class="param-name">Bond extending conjugation
+                <span class="param-note">Each extra C=C beyond the parent diene</span>
+              </td>
+              <td><span class="unit-chip">+30 nm each</span></td>
+              <td><input type="number" id="countConj" min="0" value="0"></td>
+              <td><span class="subtotal" id="sub-conj">0</span> nm</td>
+            </tr>
+            <tr>
+              <td class="param-name">Alkyl group / ring residue
+                <span class="param-note">Each R-group attached to a diene carbon</span>
+              </td>
+              <td><span class="unit-chip">+5 nm each</span></td>
+              <td><input type="number" id="countAlkyl" min="0" value="0"></td>
+              <td><span class="subtotal" id="sub-alkyl">0</span> nm</td>
+            </tr>
+            <tr>
+              <td class="param-name">Exocyclic double bond
+                <span class="param-note">One end of the C=C is outside the ring</span>
+              </td>
+              <td><span class="unit-chip">+5 nm each</span></td>
+              <td><input type="number" id="countExo" min="0" value="0"></td>
+              <td><span class="subtotal" id="sub-exo">0</span> nm</td>
+            </tr>
+            <tr>
+              <td class="param-name">Homoannular diene component
+                <span class="param-note">Extra fused ring sharing the s-cis diene</span>
+              </td>
+              <td><span class="unit-chip">+39 nm</span></td>
+              <td style="text-align:left;">
+                <label style="font-size:.85rem; display:inline-flex; align-items:center; gap:6px;">
+                  <input type="checkbox" id="homoCheck"> present
+                </label>
+              </td>
+              <td><span class="subtotal" id="sub-homo">0</span> nm</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <details class="advanced">
+          <summary>➕ Auxochromic substituent (optional — –OR, –SR, –Cl/–Br, –NR₂, –OAc)</summary>
+          <table class="calc" style="margin-top:6px;">
+            <tbody>
+              <tr>
+                <td class="param-name" style="width:40%;">Substituent type</td>
+                <td style="width:30%;">
+                  <select id="auxType">
+                    <option value="0">None</option>
+                    <option value="6">–OR (alkoxy) · +6 nm</option>
+                    <option value="30">–SR (thioether) · +30 nm</option>
+                    <option value="5">–Cl / –Br (halogen) · +5 nm</option>
+                    <option value="60">–NR₂ (amino) · +60 nm</option>
+                    <option value="0">–OCOCH₃ (acetoxy) · +0 nm</option>
+                  </select>
+                </td>
+                <td style="width:15%;">Count<br><input type="number" id="countAux" min="0" value="0"></td>
+                <td><span class="subtotal" id="sub-aux">0</span> nm</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+
+        <div class="total-box">
+          <span class="label">Your Predicted λ<sub>max</sub></span>
+          <span class="value" id="grandTotal">0 nm</span>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-check" id="checkBtn">✅ Check My Answer</button>
+          <button class="btn btn-reset" id="resetBtn">🔄 Reset Table</button>
+          <button class="btn btn-ref" id="refBtn">📖 Show Standard Values</button>
+        </div>
+
+        <div class="feedback" id="feedbackBox">
+          <span class="emoji" id="feedbackEmoji">🎉</span>
+          <span id="feedbackText"></span>
+        </div>
+
+        <div id="refTable">
+          <h2 style="font-size:1.1rem; color:var(--uv); margin-top:22px;">📖 Standard Woodward–Fieser Values (Dienes)</h2>
+          <table class="ref">
+            <thead><tr><th>Structural Feature</th><th>Increment</th></tr></thead>
+            <tbody>
+              <tr><td>Base — acyclic or heteroannular diene</td><td class="val">217 nm</td></tr>
+              <tr><td>Base — homoannular diene</td><td class="val">253 nm</td></tr>
+              <tr><td>Each bond extending conjugation</td><td class="val">+30 nm</td></tr>
+              <tr><td>Each alkyl substituent / ring residue</td><td class="val">+5 nm</td></tr>
+              <tr><td>Each exocyclic double bond</td><td class="val">+5 nm</td></tr>
+              <tr><td>Homoannular diene component (if present)</td><td class="val">+39 nm</td></tr>
+              <tr><td>Auxochrome –OCOCH₃ (acetoxy)</td><td class="val">+0 nm</td></tr>
+              <tr><td>Auxochrome –OR (alkoxy)</td><td class="val">+6 nm</td></tr>
+              <tr><td>Auxochrome –SR (thioether)</td><td class="val">+30 nm</td></tr>
+              <tr><td>Auxochrome –Cl / –Br</td><td class="val">+5 nm</td></tr>
+              <tr><td>Auxochrome –NR₂ (amino)</td><td class="val">+60 nm</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Built for pharmaceutical analysis &amp; instrumental methods revision · EduTech Service ·
+    <a href="https://exams.edutechservice.in/" target="_blank">exams.edutechservice.in</a>
+  </footer>
+</div>
+
+<script>
+/* ---------------- Structure editor capture ---------------- */
+function summarizeMolfile(molfile){
+  try{
+    const lines = molfile.split('\n');
+    const counts = lines[3] || '';
+    const atomCount = parseInt(counts.substring(0,3).trim(), 10);
+    const bondCount = parseInt(counts.substring(3,6).trim(), 10);
+    if (Number.isFinite(atomCount) && Number.isFinite(bondCount)){
+      return `Captured ✓ — ${atomCount} atom${atomCount===1?'':'s'}, ${bondCount} bond${bondCount===1?'':'s'} drawn.`;
+    }
+  }catch(e){ /* fall through */ }
+  return 'Structure captured ✓';
+}
+
+/* ---------------- Auto-analysis of the drawn structure ---------------- */
+function parseMolfileV2000(molfile){
+  const lines = molfile.split('\n');
+  const counts = lines[3] || '';
+  const atomCount = parseInt(counts.substring(0,3).trim(),10);
+  const bondCount = parseInt(counts.substring(3,6).trim(),10);
+  const atoms = [null];
+  for (let i=0;i<atomCount;i++){
+    const parts = (lines[4+i] || '').trim().split(/\s+/);
+    atoms.push({ idx:i+1, x:parseFloat(parts[0]), y:parseFloat(parts[1]), symbol: parts[3] });
+  }
+  const bonds = [];
+  for (let i=0;i<bondCount;i++){
+    const parts = (lines[4+atomCount+i] || '').trim().split(/\s+/);
+    bonds.push({ a1:parseInt(parts[0],10), a2:parseInt(parts[1],10), order:parseInt(parts[2],10) });
+  }
+  return { atoms, bonds };
+}
+
+function buildAdjacency(atoms, bonds){
+  const adj = new Map();
+  atoms.forEach(a=>{ if(a) adj.set(a.idx, []); });
+  bonds.forEach(b=>{
+    if (!adj.has(b.a1) || !adj.has(b.a2)) return;
+    adj.get(b.a1).push({ to:b.a2, order:b.order, bond:b });
+    adj.get(b.a2).push({ to:b.a1, order:b.order, bond:b });
+  });
+  return adj;
+}
+
+function bondIsRing(adj, bond){
+  // true if a1 and b2 are still connected without using this bond (i.e. it's part of a cycle)
+  const visited = new Set([bond.a1]);
+  const queue = [bond.a1];
+  while(queue.length){
+    const cur = queue.shift();
+    if (cur === bond.a2) return true;
+    for (const e of (adj.get(cur) || [])){
+      if (e.bond === bond) continue;
+      if (!visited.has(e.to)){ visited.add(e.to); queue.push(e.to); }
+    }
+  }
+  return false;
+}
+
+function makeUnionFind(maxIdx){
+  const parent = Array.from({length:maxIdx+1}, (_,i)=>i);
+  function find(x){ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; }
+  function union(a,b){ const ra=find(a), rb=find(b); if (ra!==rb) parent[ra]=rb; }
+  return { find, union };
+}
+
+function analyzeStructure(molfile){
+  let atoms, bonds;
+  try{
+    ({ atoms, bonds } = parseMolfileV2000(molfile));
+  }catch(e){ return { ok:false, reason:'parse-error' }; }
+
+  const realAtoms = atoms.filter(Boolean);
+  if (!realAtoms.length || !bonds.length) return { ok:false, reason:'empty' };
+
+  const adj = buildAdjacency(atoms, bonds);
+  bonds.forEach(b=>{ b.isRing = bondIsRing(adj, b); });
+
+  const uf = makeUnionFind(realAtoms.length + 1);
+  bonds.forEach(b=>{ if (b.isRing) uf.union(b.a1, b.a2); });
+
+  const atomMap = new Map(realAtoms.map(a=>[a.idx, a]));
+
+  const ccDoubles = bonds.filter(b => b.order===2 &&
+    atomMap.get(b.a1) && atomMap.get(b.a2) &&
+    atomMap.get(b.a1).symbol==='C' && atomMap.get(b.a2).symbol==='C');
+
+  if (ccDoubles.length < 2) return { ok:false, reason:'need-two-double-bonds' };
+
+  function areConjugated(db1, db2){
+    const pairs = [[db1.a1,db2.a1],[db1.a1,db2.a2],[db1.a2,db2.a1],[db1.a2,db2.a2]];
+    for (const [x,y] of pairs){
+      if (x===y) continue;
+      const edge = (adj.get(x) || []).find(e=>e.to===y);
+      if (edge && edge.order===1) return true;
+    }
+    return false;
+  }
+
+  const n = ccDoubles.length;
+  const dbAdj = Array.from({length:n}, ()=>[]);
+  for (let i=0;i<n;i++){
+    for (let j=i+1;j<n;j++){
+      if (areConjugated(ccDoubles[i], ccDoubles[j])){ dbAdj[i].push(j); dbAdj[j].push(i); }
+    }
+  }
+  const visited = new Array(n).fill(false);
+  let best = [];
+  for (let i=0;i<n;i++){
+    if (visited[i]) continue;
+    const comp=[i]; visited[i]=true;
+    const q=[i];
+    while(q.length){
+      const cur=q.shift();
+      for (const nb of dbAdj[cur]){
+        if(!visited[nb]){ visited[nb]=true; comp.push(nb); q.push(nb); }
+      }
+    }
+    if (comp.length > best.length) best = comp;
+  }
+  if (best.length < 2) return { ok:false, reason:'no-conjugated-diene' };
+
+  const chromophoreDoubles = best.map(i=>ccDoubles[i]);
+  const chromophoreAtoms = new Set();
+  chromophoreDoubles.forEach(b=>{ chromophoreAtoms.add(b.a1); chromophoreAtoms.add(b.a2); });
+
+  const ringDoubles = chromophoreDoubles.filter(b=>b.isRing);
+  let homoannular = false;
+  for (let i=0;i<ringDoubles.length && !homoannular;i++){
+    for (let j=i+1;j<ringDoubles.length;j++){
+      if (uf.find(ringDoubles[i].a1) === uf.find(ringDoubles[j].a1)){ homoannular = true; break; }
+    }
+  }
+  const base = homoannular ? 253 : 217;
+  const extConj = chromophoreDoubles.length - 2;
+
+  function isRingAtom(idx){ return bonds.some(b => b.isRing && (b.a1===idx || b.a2===idx)); }
+  function hasCarbonylNeighbor(oIdxExclude, cIdx){
+    for (const e of (adj.get(cIdx) || [])){
+      if (e.order===2){
+        const nb = atomMap.get(e.to);
+        if (nb && nb.symbol==='O' && e.to!==oIdxExclude) return true;
+      }
+    }
+    return false;
+  }
+
+  let alkylCount = 0;
+  const auxCounts = {};
+  chromophoreAtoms.forEach(aIdx=>{
+    for (const e of (adj.get(aIdx) || [])){
+      if (chromophoreAtoms.has(e.to)) continue;
+      if (e.order!==1) continue;
+      const nb = atomMap.get(e.to);
+      if (!nb) continue;
+      if (nb.symbol==='C'){
+        alkylCount++;
+      } else if (nb.symbol==='N'){
+        auxCounts[60]=(auxCounts[60]||0)+1;
+      } else if (nb.symbol==='S'){
+        auxCounts[30]=(auxCounts[30]||0)+1;
+      } else if (nb.symbol==='Cl' || nb.symbol==='Br'){
+        auxCounts[5]=(auxCounts[5]||0)+1;
+      } else if (nb.symbol==='O'){
+        const otherNeighbors = (adj.get(e.to) || []).filter(x=>x.to!==aIdx);
+        let isEster = false;
+        for (const on of otherNeighbors){
+          const onAtom = atomMap.get(on.to);
+          if (onAtom && onAtom.symbol==='C' && hasCarbonylNeighbor(e.to, on.to)){ isEster = true; break; }
+        }
+        const key = isEster ? 0 : 6;
+        auxCounts[key]=(auxCounts[key]||0)+1;
+      }
+    }
+  });
+
+  let exoCount = 0;
+  chromophoreDoubles.forEach(b=>{
+    const r1 = isRingAtom(b.a1), r2 = isRingAtom(b.a2);
+    if (r1 !== r2) exoCount++;
+  });
+
+  let auxType = 0, auxCount = 0;
+  Object.keys(auxCounts).forEach(k=>{
+    if (auxCounts[k] > auxCount){ auxCount = auxCounts[k]; auxType = parseInt(k,10); }
+  });
+
+  return { ok:true, base, extConj, alkylCount, exoCount, auxType, auxCount };
+}
+
+function applyAutoAnalysis(molfile){
+  const statusEl = document.getElementById('autoCalcStatus');
+  const result = analyzeStructure(molfile);
+  if (!result.ok){
+    const messages = {
+      'empty': "Nothing drawn yet — sketch a diene in the editor above.",
+      'need-two-double-bonds': "Draw at least two C=C double bonds to form a diene.",
+      'no-conjugated-diene': "These double bonds aren't conjugated — connect them with a single bond.",
+      'parse-error': "Couldn't read that structure — try redrawing it."
+    };
+    statusEl.textContent = '⚡ Live — ' + (messages[result.reason] || 'Waiting for a valid conjugated diene.');
+    return;
+  }
+  baseSelect.value = String(result.base);
+  countConj.value = result.extConj;
+  countAlkyl.value = result.alkylCount;
+  countExo.value = result.exoCount;
+  auxType.value = String(result.auxType);
+  countAux.value = result.auxCount;
+  compute();
+  statusEl.textContent = '⚡ Live — values updated instantly from your structure.';
+}
+
+let autoCalcOn = false;
+let lastMolfile = null;
+
+const autoCalcToggle = document.getElementById('autoCalcToggle');
+const autoCalcBar = document.querySelector('.autocalc-bar');
+const autoCalcStatus = document.getElementById('autoCalcStatus');
+const autoInputs = [];
+
+autoCalcToggle.addEventListener('change', ()=>{
+  autoCalcOn = autoCalcToggle.checked;
+  autoCalcBar.classList.toggle('live', autoCalcOn);
+  autoInputs.forEach(el => { el.disabled = autoCalcOn; });
+  if (autoCalcOn){
+    autoCalcStatus.textContent = lastMolfile
+      ? '⚡ Live — reading your last drawn structure…'
+      : '⚡ Live — draw (or redraw) a diene in the editor to fill this table instantly.';
+    if (lastMolfile) applyAutoAnalysis(lastMolfile);
+  } else {
+    autoCalcStatus.textContent = 'Off — fill the table yourself, or switch this on to read values straight from your drawing.';
+  }
+});
+
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || data.type !== 'ketcher-structure') return;
+  if (data.molfile) lastMolfile = data.molfile;
+
+  if (!data.auto){
+    const box = document.getElementById('captureReadout');
+    const summary = data.molfile ? summarizeMolfile(data.molfile) : 'Structure captured ✓';
+    box.innerHTML = '<span class="lbl">Captured structure</span>' + summary;
+  }
+
+  if (autoCalcOn && data.molfile) applyAutoAnalysis(data.molfile);
+});
+
+/* ---------------- Compound data & selection ---------------- */
+const compounds = {
+  butadiene: {
+    name: "1,3-Butadiene",
+    base: 217, conj: 0, alkyl: 0, exo: 0, homo: 0, auxType: 0, auxCount: 0,
+    total: 217
+  },
+  dimethylbutadiene: {
+    name: "2,3-Dimethyl-1,3-butadiene",
+    base: 217, conj: 0, alkyl: 2, exo: 0, homo: 0, auxType: 0, auxCount: 0,
+    total: 227
+  },
+  cyclohexadiene: {
+    name: "1,3-Cyclohexadiene",
+    base: 253, conj: 0, alkyl: 2, exo: 0, homo: 0, auxType: 0, auxCount: 0,
+    total: 263
+  }
+};
+let selectedCompound = null;
+
+document.querySelectorAll('.compound-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    document.querySelectorAll('.compound-card').forEach(c=>c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedCompound = card.getAttribute('data-key');
+    resetTable(false);
+    document.getElementById('feedbackBox').classList.remove('show','good','bad');
+  });
+});
+
+/* ---------------- Calculation table logic ---------------- */
+const baseSelect = document.getElementById('baseSelect');
+const countConj = document.getElementById('countConj');
+const countAlkyl = document.getElementById('countAlkyl');
+const countExo = document.getElementById('countExo');
+const homoCheck = document.getElementById('homoCheck');
+const auxType = document.getElementById('auxType');
+const countAux = document.getElementById('countAux');
+const grandTotalEl = document.getElementById('grandTotal');
+autoInputs.push(baseSelect, countConj, countAlkyl, countExo, auxType, countAux);
+
+function compute(){
+  const base = parseInt(baseSelect.value,10);
+  const conj = (parseInt(countConj.value,10)||0) * 30;
+  const alkyl = (parseInt(countAlkyl.value,10)||0) * 5;
+  const exo = (parseInt(countExo.value,10)||0) * 5;
+  const homo = homoCheck.checked ? 39 : 0;
+  const aux = (parseInt(auxType.value,10)||0) * (parseInt(countAux.value,10)||0);
+
+  document.getElementById('sub-base').textContent = base;
+  document.getElementById('sub-conj').textContent = conj;
+  document.getElementById('sub-alkyl').textContent = alkyl;
+  document.getElementById('sub-exo').textContent = exo;
+  document.getElementById('sub-homo').textContent = homo;
+  document.getElementById('sub-aux').textContent = aux;
+
+  const total = base + conj + alkyl + exo + homo + aux;
+  grandTotalEl.textContent = total + ' nm';
+  grandTotalEl.classList.remove('pulse');
+  void grandTotalEl.offsetWidth; // restart animation
+  grandTotalEl.classList.add('pulse');
+  return total;
+}
+
+[baseSelect, countConj, countAlkyl, countExo, homoCheck, auxType, countAux].forEach(el=>{
+  el.addEventListener('input', compute);
+  el.addEventListener('change', compute);
+});
+
+function resetTable(clearSelection){
+  baseSelect.value = "217";
+  countConj.value = 0;
+  countAlkyl.value = 0;
+  countExo.value = 0;
+  homoCheck.checked = false;
+  auxType.value = "0";
+  countAux.value = 0;
+  compute();
+  if(clearSelection){
+    selectedCompound = null;
+    document.querySelectorAll('.compound-card').forEach(c=>c.classList.remove('selected'));
+  }
+}
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  resetTable(false);
+  document.getElementById('feedbackBox').classList.remove('show','good','bad');
+});
+
+/* ---------------- Check answer ---------------- */
+function confettiBurst(){
+  const colors = ['#7b2ff7','#2d7dff','#17c994','#ffb020','#ff5a6e'];
+  for(let i=0;i<40;i++){
+    const d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random()*100 + 'vw';
+    d.style.background = colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    d.style.opacity = 0.85;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 3800);
+  }
+}
+
+document.getElementById('checkBtn').addEventListener('click', ()=>{
+  const total = compute();
+  const feedbackBox = document.getElementById('feedbackBox');
+  const feedbackText = document.getElementById('feedbackText');
+  const feedbackEmoji = document.getElementById('feedbackEmoji');
+
+  if(!selectedCompound){
+    feedbackBox.className = 'feedback show bad';
+    feedbackEmoji.textContent = '🧐';
+    feedbackText.textContent = "Pick a practice compound above first, so there's a known answer to check against.";
+    return;
+  }
+
+  const answer = compounds[selectedCompound].total;
+  if(total === answer){
+    feedbackBox.className = 'feedback show good';
+    feedbackEmoji.textContent = '🎉';
+    feedbackText.textContent = `Correct! The Woodward–Fieser predicted λmax of ${compounds[selectedCompound].name} is ${answer} nm — exactly what you calculated.`;
+    confettiBurst();
+  } else {
+    feedbackBox.className = 'feedback show bad';
+    feedbackEmoji.textContent = '🔎';
+    feedbackText.textContent = `Not quite — you calculated ${total} nm, but the correct value for ${compounds[selectedCompound].name} is ${answer} nm. Check the standard values table below and try again.`;
+    document.getElementById('refTable').classList.add('show');
+    document.getElementById('refTable').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+});
+
+document.getElementById('refBtn').addEventListener('click', ()=>{
+  document.getElementById('refTable').classList.toggle('show');
+});
+
+compute();
+</script>
+</body>
+</html>
